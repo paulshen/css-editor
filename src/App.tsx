@@ -47,6 +47,9 @@ function CSSPropertyElement(props: RenderElementProps) {
           at: [],
           match: (node) => node === element,
         });
+        Transforms.delete(editor, {
+          at: [...nodeEntry[1], 0],
+        });
         Transforms.setNodes(
           editor,
           {
@@ -56,9 +59,6 @@ function CSSPropertyElement(props: RenderElementProps) {
             at: nodeEntry[1],
           }
         );
-        Transforms.delete(editor, {
-          at: [...nodeEntry[1], 0],
-        });
       }
     }
   }, [selected]);
@@ -390,13 +390,34 @@ function App() {
           onKeyDown={(e) => {
             if (e.key === "Tab") {
               if (editor.selection !== null) {
-                const nextPoint = e.shiftKey
-                  ? Editor.before(editor, editor.selection, {
-                      unit: "block",
-                    })
-                  : Editor.after(editor, editor.selection, {
-                      unit: "block",
-                    });
+                let nextPoint;
+                if (e.shiftKey) {
+                  nextPoint = Editor.before(editor, editor.selection, {
+                    unit: "block",
+                  });
+                  if (nextPoint !== undefined) {
+                    if (
+                      Path.equals(editor.selection.focus.path, nextPoint.path)
+                    ) {
+                      nextPoint = Editor.before(editor, nextPoint, {
+                        unit: "block",
+                      });
+                    }
+                  }
+                } else {
+                  nextPoint = Editor.after(editor, editor.selection, {
+                    unit: "block",
+                  });
+                  if (nextPoint !== undefined) {
+                    if (
+                      Path.equals(editor.selection.focus.path, nextPoint.path)
+                    ) {
+                      nextPoint = Editor.after(editor, nextPoint, {
+                        unit: "block",
+                      });
+                    }
+                  }
+                }
                 if (nextPoint !== undefined) {
                   Transforms.setSelection(editor, {
                     anchor: nextPoint,
@@ -434,6 +455,21 @@ function App() {
                     });
                     e.preventDefault();
                   }
+                }
+              }
+            } else if (e.key === "Enter") {
+              const aboveMatch = Editor.above(editor, {
+                match: (node) => node.type === "css-property",
+              });
+              if (aboveMatch !== undefined) {
+                const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+                if (typeof aboveMatchNode.value === "string") {
+                  Transforms.setNodes(editor, { value: undefined });
+                  Transforms.insertText(editor, aboveMatchNode.value);
+                  Transforms.setSelection(editor, {
+                    anchor: { path: aboveMatchNodePath, offset: 0 },
+                  });
+                  e.preventDefault();
                 }
               }
             }
