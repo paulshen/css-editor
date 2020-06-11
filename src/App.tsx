@@ -138,11 +138,21 @@ function App() {
       return isInline(element);
     };
     editor.insertBreak = () => {
-      const [declarationNode] = Editor.nodes(editor, {
+      let newDeclarationPath;
+      const [declarationNodeEntry] = Editor.nodes(editor, {
         match: (node: Node) => node.type === "css-declaration",
       });
-      if (declarationNode !== undefined) {
-        const newPath = Path.next(declarationNode[1]);
+      if (declarationNodeEntry !== undefined) {
+        newDeclarationPath = Path.next(declarationNodeEntry[1]);
+      } else {
+        const [selectorNodeEntry] = Editor.nodes(editor, {
+          match: (node: Node) => node.type === "css-selector",
+        });
+        if (selectorNodeEntry !== undefined) {
+          newDeclarationPath = [...Path.next(selectorNodeEntry[1]), 0];
+        }
+      }
+      if (newDeclarationPath !== undefined) {
         Transforms.insertNodes(
           editor,
           {
@@ -158,15 +168,15 @@ function App() {
               },
             ],
           },
-          { at: newPath }
+          { at: newDeclarationPath }
         );
         Transforms.setSelection(editor, {
           anchor: {
-            path: newPath,
+            path: newDeclarationPath,
             offset: 0,
           },
           focus: {
-            path: newPath,
+            path: newDeclarationPath,
             offset: 0,
           },
         });
