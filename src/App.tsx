@@ -138,6 +138,20 @@ function CSSValueElement(props: RenderElementProps) {
       setValueNodeValue(editor, element);
     }
   }, [selected]);
+  const childText = element.children[0].text as string;
+  const suggestions = React.useMemo(() => {
+    if (!selected) {
+      return undefined;
+    }
+    if (element.value !== undefined) {
+      return undefined;
+    }
+    if (typeof element.property !== "string") {
+      return undefined;
+    }
+    const foo = ENUM_PROPERTIES[element.property];
+    return foo.filter((option) => option.startsWith(childText));
+  }, [selected, element.property, childText]);
   return (
     <span {...attributes}>
       {typeof element.value === "string" ? (
@@ -152,6 +166,13 @@ function CSSValueElement(props: RenderElementProps) {
         </span>
       ) : null}
       {children}
+      {suggestions !== undefined && suggestions.length > 0 ? (
+        <div contentEditable={false}>
+          {suggestions.map((suggestion) => (
+            <div key={suggestion}>{suggestion}</div>
+          ))}
+        </div>
+      ) : null}
     </span>
   );
 }
