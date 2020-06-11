@@ -1,50 +1,62 @@
 import * as React from "react";
-import { createEditor, Node } from "slate";
+import { createEditor, Editor, Node, Path, Element, Transforms } from "slate";
 import {
   DefaultElement,
   Editable,
   RenderElementProps,
   Slate,
-  useFocused,
   useSelected,
   withReact,
 } from "slate-react";
+import styles from "./App.module.css";
 
 function CSSSelectorElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
   return (
-    <div {...attributes}>
+    <div {...attributes} className={styles.cssSelector}>
       {children}
-      <span contentEditable={false}>{" {"}</span>
     </div>
   );
 }
 function CSSBlockElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
   return (
-    <div {...attributes}>
-      <div style={{ paddingLeft: "16px" }}>{children}</div>
-      <div contentEditable={false}>{"}"}</div>
+    <div {...attributes} className={styles.cssBlock}>
+      <div className={styles.blockDeclarations}>{children}</div>
     </div>
   );
 }
-function CSSTypeElement(props: RenderElementProps) {
+function CSSPropertyElement(props: RenderElementProps) {
   const selected = useSelected();
-  const focused = useFocused();
   const { attributes, children, element } = props;
   return (
-    <span {...attributes}>
+    <span {...attributes} className={styles.cssProperty}>
       {typeof element.value === "string" ? (
         <span
           style={{
-            backgroundColor: selected && focused ? "#f0f0f0" : undefined,
+            backgroundColor: selected ? "#e0e0e0" : undefined,
           }}
+          contentEditable={false}
         >
           {element.value}
         </span>
       ) : null}
       {children}
-      <span contentEditable={false}>: </span>
+      <span contentEditable={false} className={styles.colon}>
+        :{" "}
+      </span>
+    </span>
+  );
+}
+function CSSValueElement(props: RenderElementProps) {
+  const selected = useSelected();
+  const { attributes, children, element } = props;
+  return (
+    <span
+      {...attributes}
+      style={{ backgroundColor: selected ? "#f0f0f0" : undefined }}
+    >
+      {children}
     </span>
   );
 }
@@ -54,19 +66,19 @@ function renderElement(props: RenderElementProps) {
   switch (props.element.type) {
     case "css-selector":
       return <CSSSelectorElement {...props} />;
-    case "css-type":
-      return <CSSTypeElement {...props} />;
-    case "css-value":
+    case "css-declaration":
       return (
-        <span {...attributes}>
+        <div {...attributes} className={styles.cssDeclaration}>
           {children}
-          <span contentEditable={false}>;</span>
-        </span>
+        </div>
       );
+    case "css-property":
+      return <CSSPropertyElement {...props} />;
+    case "css-value":
+      return <CSSValueElement {...props} />;
     case "css-block":
       return <CSSBlockElement {...props} />;
     case "css-rule":
-    case "css-declaration":
       return <div {...attributes}>{children}</div>;
     default:
       return <DefaultElement {...props} />;
@@ -76,12 +88,73 @@ function renderElement(props: RenderElementProps) {
 function App() {
   const editor = React.useMemo(() => {
     const editor = withReact(createEditor());
-    const isVoid = editor.isVoid;
+    const { isVoid, isInline, insertBreak, insertNode, normalizeNode } = editor;
     editor.isVoid = (element) => {
-      if (element.type === "css-type" && element.value !== undefined) {
+      if (element.type === "css-property" && element.value !== undefined) {
         return true;
       }
       return isVoid(element);
+    };
+    editor.isInline = (element) => {
+      // if (element.type === "css-property" || element.type === "css-value") {
+      //   return true;
+      // }
+      return isInline(element);
+    };
+    editor.insertBreak = () => {
+      const [declarationNode] = Editor.nodes(editor, {
+        match: (node: Node) => node.type === "css-declaration",
+      });
+      if (declarationNode !== undefined) {
+        const newPath = Path.next(declarationNode[1]);
+        Transforms.insertNodes(
+          editor,
+          {
+            type: "css-declaration",
+            children: [
+              {
+                type: "css-property",
+                children: [{ text: "" }],
+              },
+              {
+                type: "css-value",
+                children: [{ text: "" }],
+              },
+            ],
+          },
+          { at: newPath }
+        );
+        Transforms.setSelection(editor, {
+          anchor: {
+            path: newPath,
+            offset: 0,
+          },
+          focus: {
+            path: newPath,
+            offset: 0,
+          },
+        });
+        return;
+      }
+      insertBreak();
+    };
+    editor.normalizeNode = (entry) => {
+      const [node, path] = entry;
+
+      if (Element.isElement(node) && node.type === "css-declaration") {
+        let hasCssTypeChild = false;
+        for (const [child, childPath] of Node.children(editor, path)) {
+          if (Element.isElement(child) && child.type === "css-property") {
+            hasCssTypeChild = true;
+          }
+        }
+        if (!hasCssTypeChild) {
+          Transforms.removeNodes(editor, { at: path });
+          return;
+        }
+      }
+
+      normalizeNode(entry);
     };
     return editor;
   }, []);
@@ -104,7 +177,7 @@ function App() {
               type: "css-declaration",
               children: [
                 {
-                  type: "css-type",
+                  type: "css-property",
                   value: "border",
                   children: [{ text: "" }],
                 },
@@ -118,7 +191,7 @@ function App() {
               type: "css-declaration",
               children: [
                 {
-                  type: "css-type",
+                  type: "css-property",
                   value: "color",
                   children: [{ text: "" }],
                 },
@@ -132,17 +205,74 @@ function App() {
         },
       ],
     },
+    {
+      type: "css-rule",
+      children: [
+        {
+          type: "css-selector",
+          children: [
+            {
+              text: ".foo",
+            },
+          ],
+        },
+        {
+          type: "css-block",
+          children: [
+            {
+              type: "css-declaration",
+              children: [
+                {
+                  type: "css-property",
+                  value: "border",
+                  children: [{ text: "" }],
+                },
+                {
+                  type: "css-value",
+                  children: [{ text: "1px solid black" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   ]);
   return (
-    <Slate
-      editor={editor}
-      value={value}
-      onChange={(newValue) => {
-        setValue(newValue);
-      }}
-    >
-      <Editable renderElement={renderElement} />
-    </Slate>
+    <div className={styles.app}>
+      <Slate
+        editor={editor}
+        value={value}
+        onChange={(newValue) => {
+          console.log(newValue);
+          setValue(newValue);
+        }}
+      >
+        <Editable
+          renderElement={renderElement}
+          onKeyDown={(e) => {
+            if (e.key === "Tab") {
+              if (editor.selection !== null) {
+                const nextPoint = e.shiftKey
+                  ? Editor.before(editor, editor.selection, {
+                      unit: "block",
+                    })
+                  : Editor.after(editor, editor.selection, {
+                      unit: "block",
+                    });
+                if (nextPoint !== undefined) {
+                  Transforms.setSelection(editor, {
+                    anchor: nextPoint,
+                    focus: nextPoint,
+                  });
+                  e.preventDefault();
+                }
+              }
+            }
+          }}
+        />
+      </Slate>
+    </div>
   );
 }
 

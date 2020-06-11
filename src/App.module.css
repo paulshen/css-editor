@@ -1,0 +1,38 @@
+.app {
+  font-family: SF Mono;
+}
+
+.cssSelector::after {
+  content: " {";
+  opacity: 0.5;
+}
+
+.cssBlock {
+  margin-bottom: 16px;
+}
+
+.cssBlock::after {
+  content: "}";
+  opacity: 0.5;
+}
+
+.blockDeclarations {
+  padding-left: 16px;
+}
+
+.blockDeclarations br {
+  content: "";
+}
+
+.cssProperty div {
+  display: none;
+}
+
+.colon {
+  opacity: 0.5;
+}
+
+.cssDeclaration::after {
+  content: ";";
+  opacity: 0.5;
+}
