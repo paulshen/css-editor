@@ -16,8 +16,14 @@ import {
   useSelected,
   withReact,
   useEditor,
+  ReactEditor,
 } from "slate-react";
 import styles from "./App.module.css";
+
+const ENUM_PROPERTIES: Record<string, string[]> = {
+  display: ["flex", "block", "inline"],
+  "align-items": ["center", "flex-start", "flex-end", "stretch"],
+};
 
 function CSSSelectorElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
@@ -35,6 +41,46 @@ function CSSBlockElement(props: RenderElementProps) {
     </div>
   );
 }
+function setValueNodeValue(
+  editor: ReactEditor,
+  valueNode: undefined,
+  valueNodePath: Path
+): void;
+function setValueNodeValue(editor: ReactEditor, valueNode: Element): void;
+function setValueNodeValue(
+  editor: ReactEditor,
+  valueNode: Element | undefined,
+  valueNodePath?: Path
+) {
+  const element =
+    valueNode !== undefined
+      ? valueNode
+      : Editor.node(editor, valueNodePath!)[0];
+  if (
+    element.value === undefined &&
+    typeof element.property === "string" &&
+    Array.isArray(element.children)
+  ) {
+    const childText = element.children[0].text;
+    if (
+      typeof childText === "string" &&
+      typeof element.property === "string" &&
+      ENUM_PROPERTIES[element.property] !== undefined &&
+      ENUM_PROPERTIES[element.property].includes(childText)
+    ) {
+      let nodePath = valueNodePath;
+      if (nodePath === undefined) {
+        const [valueNodeEntry] = Editor.nodes(editor, {
+          at: [],
+          match: (node) => node === element,
+        });
+        nodePath = valueNodeEntry[1];
+      }
+      Transforms.delete(editor, { at: [...nodePath, 0] });
+      Transforms.setNodes(editor, { value: childText }, { at: nodePath });
+    }
+  }
+}
 function CSSPropertyElement(props: RenderElementProps) {
   const editor = useEditor();
   const selected = useSelected();
@@ -42,23 +88,24 @@ function CSSPropertyElement(props: RenderElementProps) {
   React.useEffect(() => {
     if (!selected && element.value === undefined) {
       const childText = element.children[0].text;
-      if (typeof childText === "string" && childText.length > 0) {
+      if (
+        typeof childText === "string" &&
+        ENUM_PROPERTIES[childText] !== undefined
+      ) {
         const [nodeEntry] = Editor.nodes(editor, {
           at: [],
           match: (node) => node === element,
         });
-        Transforms.delete(editor, {
-          at: [...nodeEntry[1], 0],
-        });
+        Transforms.delete(editor, { at: [...nodeEntry[1], 0] });
+        Transforms.setNodes(editor, { value: childText }, { at: nodeEntry[1] });
+        const valueNodePath = Path.next(nodeEntry[1]);
+        const [valueNode] = Editor.node(editor, valueNodePath);
         Transforms.setNodes(
           editor,
-          {
-            value: childText,
-          },
-          {
-            at: nodeEntry[1],
-          }
+          { property: childText },
+          { at: valueNodePath }
         );
+        setValueNodeValue(editor, undefined, valueNodePath);
       }
     }
   }, [selected]);
@@ -83,9 +130,30 @@ function CSSPropertyElement(props: RenderElementProps) {
   );
 }
 function CSSValueElement(props: RenderElementProps) {
+  const editor = useEditor();
   const selected = useSelected();
   const { attributes, children, element } = props;
-  return <span {...attributes}>{children}</span>;
+  React.useEffect(() => {
+    if (!selected) {
+      setValueNodeValue(editor, element);
+    }
+  }, [selected]);
+  return (
+    <span {...attributes}>
+      {typeof element.value === "string" ? (
+        <span
+          style={{
+            backgroundColor: selected ? "#e0e0e0" : undefined,
+            color: "green",
+          }}
+          contentEditable={false}
+        >
+          {element.value}
+        </span>
+      ) : null}
+      {children}
+    </span>
+  );
 }
 
 function renderElement(props: RenderElementProps) {
@@ -151,6 +219,9 @@ function App() {
       if (element.type === "css-property" && element.value !== undefined) {
         return true;
       }
+      if (element.type === "css-value" && element.value !== undefined) {
+        return true;
+      }
       return isVoid(element);
     };
     editor.isInline = (element) => {
@@ -198,14 +269,8 @@ function App() {
           { at: newDeclarationPath }
         );
         Transforms.setSelection(editor, {
-          anchor: {
-            path: newDeclarationPath,
-            offset: 0,
-          },
-          focus: {
-            path: newDeclarationPath,
-            offset: 0,
-          },
+          anchor: { path: newDeclarationPath, offset: 0 },
+          focus: { path: newDeclarationPath, offset: 0 },
         });
         return;
       }
@@ -256,9 +321,7 @@ function App() {
                   Transforms.setNodes(
                     editor,
                     { value: undefined },
-                    {
-                      match: (node) => node.type === "css-property",
-                    }
+                    { match: (node) => node.type === "css-property" }
                   );
                   return;
                 }
@@ -322,14 +385,8 @@ function App() {
               {
                 type: "css-declaration",
                 children: [
-                  {
-                    type: "css-property",
-                    children: [{ text: "" }],
-                  },
-                  {
-                    type: "css-value",
-                    children: [{ text: "" }],
-                  },
+                  { type: "css-property", children: [{ text: "" }] },
+                  { type: "css-value", children: [{ text: "" }] },
                 ],
               },
               { at: [...path, 0] }
@@ -436,6 +493,55 @@ function App() {
         <Editable
           renderElement={renderElement}
           onKeyDown={(e) => {
+            const convertNodeToEdit = () => {
+              {
+                const aboveMatch = Editor.above(editor, {
+                  match: (node) => node.type === "css-property",
+                });
+                if (aboveMatch !== undefined) {
+                  const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+                  if (typeof aboveMatchNode.value === "string") {
+                    Transforms.setNodes(editor, { value: undefined });
+                    Transforms.insertText(editor, aboveMatchNode.value);
+                    Transforms.setSelection(editor, {
+                      anchor: { path: aboveMatchNodePath, offset: 0 },
+                    });
+                    const valueNodeEntry = Editor.node(
+                      editor,
+                      Path.next(aboveMatchNodePath)
+                    );
+                    const value = valueNodeEntry[0].value;
+                    if (typeof value === "string") {
+                      Transforms.setNodes(
+                        editor,
+                        { value: undefined },
+                        { at: valueNodeEntry[1] }
+                      );
+                      Transforms.insertText(editor, value, {
+                        at: valueNodeEntry[1],
+                      });
+                    }
+                    e.preventDefault();
+                  }
+                }
+              }
+              {
+                const aboveMatch = Editor.above(editor, {
+                  match: (node) => node.type === "css-value",
+                });
+                if (aboveMatch !== undefined) {
+                  const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+                  if (typeof aboveMatchNode.value === "string") {
+                    Transforms.setNodes(editor, { value: undefined });
+                    Transforms.insertText(editor, aboveMatchNode.value);
+                    Transforms.setSelection(editor, {
+                      anchor: { path: aboveMatchNodePath, offset: 0 },
+                    });
+                    e.preventDefault();
+                  }
+                }
+              }
+            };
             if (e.key === "Tab") {
               if (editor.selection !== null) {
                 let nextPoint;
@@ -475,33 +581,61 @@ function App() {
                 }
               }
             } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-              const aboveMatch = Editor.above(editor, {
-                match: (node) => node.type === "css-property",
-              });
-              if (aboveMatch !== undefined) {
+              if (e.altKey) {
                 const match = Editor.above(editor, {
-                  match: (node: Node) => node.type === "css-declaration",
+                  match: (node: Node) =>
+                    node.type === "css-value" &&
+                    typeof node.property === "string" &&
+                    typeof node.value === "string" &&
+                    ENUM_PROPERTIES[node.property] !== undefined &&
+                    ENUM_PROPERTIES[node.property].includes(node.value),
                 });
                 if (match !== undefined) {
                   const [matchNode, matchPath] = match;
-                  let nextMatch;
-                  if (e.key === "ArrowDown") {
-                    nextMatch = Editor.next(editor, {
-                      at: Editor.point(editor, matchPath, { edge: "end" }),
-                    });
-                  }
-                  if (e.key === "ArrowUp") {
-                    nextMatch = Editor.previous(editor, {
-                      at: matchPath,
-                    });
-                  }
-                  if (nextMatch !== undefined) {
-                    const [_, nextPath] = nextMatch;
-                    Transforms.setSelection(editor, {
-                      anchor: { path: nextPath, offset: 0 },
-                      focus: { path: nextPath, offset: 0 },
-                    });
-                    e.preventDefault();
+                  const enumValues =
+                    ENUM_PROPERTIES[matchNode.property as string];
+                  const index = enumValues.indexOf(matchNode.value as string);
+                  const nextIndex =
+                    (index +
+                      enumValues.length +
+                      (e.key === "ArrowDown" ? 1 : -1)) %
+                    enumValues.length;
+                  Transforms.setNodes(
+                    editor,
+                    { value: enumValues[nextIndex] },
+                    { at: matchPath }
+                  );
+                  e.preventDefault();
+                }
+              } else {
+                const aboveMatch = Editor.above(editor, {
+                  match: (node) => node.type === "css-property",
+                });
+                if (aboveMatch !== undefined) {
+                  const match = Editor.above(editor, {
+                    match: (node: Node) => node.type === "css-declaration",
+                  });
+                  if (match !== undefined) {
+                    const [matchNode, matchPath] = match;
+                    let nextMatch;
+                    if (e.key === "ArrowDown") {
+                      nextMatch = Editor.next(editor, {
+                        at: Editor.point(editor, matchPath, { edge: "end" }),
+                      });
+                    }
+                    if (e.key === "ArrowUp") {
+                      nextMatch = Editor.previous(editor, {
+                        at: matchPath,
+                      });
+                    }
+                    if (nextMatch !== undefined) {
+                      const [_, nextPath] = nextMatch;
+                      Transforms.setSelection(editor, {
+                        anchor: { path: nextPath, offset: 0 },
+                        focus: { path: nextPath, offset: 0 },
+                      });
+                      e.preventDefault();
+                    }
                   }
                 }
               }
@@ -515,22 +649,9 @@ function App() {
                   insertRule(editor, Path.next(aboveMatchNodePath));
                   e.preventDefault();
                 }
-              } else {
-                const aboveMatch = Editor.above(editor, {
-                  match: (node) => node.type === "css-property",
-                });
-                if (aboveMatch !== undefined) {
-                  const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-                  if (typeof aboveMatchNode.value === "string") {
-                    Transforms.setNodes(editor, { value: undefined });
-                    Transforms.insertText(editor, aboveMatchNode.value);
-                    Transforms.setSelection(editor, {
-                      anchor: { path: aboveMatchNodePath, offset: 0 },
-                    });
-                    e.preventDefault();
-                  }
-                }
               }
+            } else if (e.key === "c") {
+              convertNodeToEdit();
             }
           }}
         />
