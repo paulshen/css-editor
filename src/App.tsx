@@ -256,14 +256,8 @@ function App() {
           {
             type: "css-declaration",
             children: [
-              {
-                type: "css-property",
-                children: [{ text: "" }],
-              },
-              {
-                type: "css-value",
-                children: [{ text: "" }],
-              },
+              { type: "css-property", children: [{ text: "" }] },
+              { type: "css-value", children: [{ text: "" }] },
             ],
           },
           { at: newDeclarationPath }
@@ -367,14 +361,30 @@ function App() {
 
       if (Element.isElement(node)) {
         if (node.type === "css-declaration") {
-          let hasCssTypeChild = false;
+          let typeChild;
+          let hasCssValueChild = false;
           for (const [child, childPath] of Node.children(editor, path)) {
             if (Element.isElement(child) && child.type === "css-property") {
-              hasCssTypeChild = true;
+              typeChild = child;
+            }
+            if (Element.isElement(child) && child.type === "css-value") {
+              hasCssValueChild = true;
             }
           }
-          if (!hasCssTypeChild) {
+          if (typeChild === undefined) {
             Transforms.removeNodes(editor, { at: path });
+            return;
+          }
+          if (!hasCssValueChild) {
+            Transforms.insertNodes(
+              editor,
+              {
+                type: "css-value",
+                property: typeChild.value,
+                children: [{ text: "" }],
+              },
+              { at: [...path, 1] }
+            );
             return;
           }
         }
