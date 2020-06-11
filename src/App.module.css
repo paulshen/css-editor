@@ -2,6 +2,10 @@
   font-family: SF Mono;
 }
 
+.cssRule br {
+  content: "";
+}
+
 .cssSelector::after {
   content: " {";
   opacity: 0.5;
@@ -18,10 +22,6 @@
 
 .blockDeclarations {
   padding-left: 16px;
-}
-
-.blockDeclarations br {
-  content: "";
 }
 
 .cssProperty div {

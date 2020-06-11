@@ -1,5 +1,13 @@
 import * as React from "react";
-import { createEditor, Editor, Node, Path, Element, Transforms } from "slate";
+import {
+  createEditor,
+  Editor,
+  Node,
+  Range,
+  Path,
+  Element,
+  Transforms,
+} from "slate";
 import {
   DefaultElement,
   Editable,
@@ -7,6 +15,7 @@ import {
   Slate,
   useSelected,
   withReact,
+  useEditor,
 } from "slate-react";
 import styles from "./App.module.css";
 
@@ -27,14 +36,39 @@ function CSSBlockElement(props: RenderElementProps) {
   );
 }
 function CSSPropertyElement(props: RenderElementProps) {
+  const editor = useEditor();
   const selected = useSelected();
   const { attributes, children, element } = props;
+  React.useEffect(() => {
+    if (!selected && element.value === undefined) {
+      const childText = element.children[0].text;
+      if (typeof childText === "string" && childText.length > 0) {
+        const [nodeEntry] = Editor.nodes(editor, {
+          at: [],
+          match: (node) => node === element,
+        });
+        Transforms.setNodes(
+          editor,
+          {
+            value: childText,
+          },
+          {
+            at: nodeEntry[1],
+          }
+        );
+        Transforms.delete(editor, {
+          at: [...nodeEntry[1], 0],
+        });
+      }
+    }
+  }, [selected]);
   return (
     <span {...attributes} className={styles.cssProperty}>
       {typeof element.value === "string" ? (
         <span
           style={{
             backgroundColor: selected ? "#e0e0e0" : undefined,
+            color: "green",
           }}
           contentEditable={false}
         >
@@ -51,14 +85,7 @@ function CSSPropertyElement(props: RenderElementProps) {
 function CSSValueElement(props: RenderElementProps) {
   const selected = useSelected();
   const { attributes, children, element } = props;
-  return (
-    <span
-      {...attributes}
-      style={{ backgroundColor: selected ? "#f0f0f0" : undefined }}
-    >
-      {children}
-    </span>
-  );
+  return <span {...attributes}>{children}</span>;
 }
 
 function renderElement(props: RenderElementProps) {
@@ -79,7 +106,11 @@ function renderElement(props: RenderElementProps) {
     case "css-block":
       return <CSSBlockElement {...props} />;
     case "css-rule":
-      return <div {...attributes}>{children}</div>;
+      return (
+        <div {...attributes} className={styles.cssRule}>
+          {children}
+        </div>
+      );
     default:
       return <DefaultElement {...props} />;
   }
@@ -88,7 +119,15 @@ function renderElement(props: RenderElementProps) {
 function App() {
   const editor = React.useMemo(() => {
     const editor = withReact(createEditor());
-    const { isVoid, isInline, insertBreak, insertNode, normalizeNode } = editor;
+    const {
+      isVoid,
+      isInline,
+      insertBreak,
+      insertNode,
+      deleteBackward,
+      deleteForward,
+      normalizeNode,
+    } = editor;
     editor.isVoid = (element) => {
       if (element.type === "css-property" && element.value !== undefined) {
         return true;
@@ -96,9 +135,6 @@ function App() {
       return isVoid(element);
     };
     editor.isInline = (element) => {
-      // if (element.type === "css-property" || element.type === "css-value") {
-      //   return true;
-      // }
       return isInline(element);
     };
     editor.insertBreak = () => {
@@ -138,19 +174,120 @@ function App() {
       }
       insertBreak();
     };
+    editor.deleteBackward = (unit) => {
+      if (editor.selection !== null) {
+        if (Range.isCollapsed(editor.selection)) {
+          const nodeEntry = Editor.node(editor, editor.selection);
+          const nextPoint = Editor.before(editor, editor.selection);
+          if (
+            nextPoint !== undefined &&
+            !Path.equals(nodeEntry[1], nextPoint.path)
+          ) {
+            const canDelete = () => {
+              const cssDeclaration = Editor.above(editor, {
+                match: (node) => node.type === "css-declaration",
+              });
+              if (cssDeclaration === undefined) {
+                return false;
+              }
+              const cssProperty = Editor.above(editor, {
+                match: (node) => node.type === "css-property",
+              });
+              if (cssProperty !== undefined) {
+                const [cssPropertyNode] = cssProperty;
+                if (
+                  cssPropertyNode.value === undefined &&
+                  cssPropertyNode.children[0].text === ""
+                ) {
+                  Transforms.removeNodes(editor, {
+                    match: (node) => node.type === "css-declaration",
+                  });
+                  return;
+                }
+                if (cssPropertyNode.value !== undefined) {
+                  Transforms.setNodes(
+                    editor,
+                    { value: undefined },
+                    {
+                      match: (node) => node.type === "css-property",
+                    }
+                  );
+                  return;
+                }
+              }
+              const [cssDeclarationNode] = cssDeclaration;
+              const nextCssDeclaration = Editor.above(editor, {
+                at: nextPoint,
+                match: (node) => node.type === "css-declaration",
+              });
+              if (
+                nextCssDeclaration === undefined ||
+                cssDeclarationNode !== nextCssDeclaration[0]
+              ) {
+                return false;
+              }
+              return true;
+            };
+            if (!canDelete()) {
+              return;
+            }
+          }
+        }
+      }
+      deleteBackward(unit);
+    };
+    editor.deleteForward = (unit) => {
+      if (editor.selection !== null) {
+        if (Range.isCollapsed(editor.selection)) {
+          const nodeEntry = Editor.node(editor, editor.selection);
+          const nextPoint = Editor.after(editor, editor.selection);
+          if (
+            nextPoint !== undefined &&
+            !Path.equals(nodeEntry[1], nextPoint.path)
+          ) {
+            return;
+          }
+        }
+      }
+      deleteForward(unit);
+    };
     editor.normalizeNode = (entry) => {
       const [node, path] = entry;
 
-      if (Element.isElement(node) && node.type === "css-declaration") {
-        let hasCssTypeChild = false;
-        for (const [child, childPath] of Node.children(editor, path)) {
-          if (Element.isElement(child) && child.type === "css-property") {
-            hasCssTypeChild = true;
+      if (Element.isElement(node)) {
+        if (node.type === "css-declaration") {
+          let hasCssTypeChild = false;
+          for (const [child, childPath] of Node.children(editor, path)) {
+            if (Element.isElement(child) && child.type === "css-property") {
+              hasCssTypeChild = true;
+            }
+          }
+          if (!hasCssTypeChild) {
+            Transforms.removeNodes(editor, { at: path });
+            return;
           }
         }
-        if (!hasCssTypeChild) {
-          Transforms.removeNodes(editor, { at: path });
-          return;
+        if (node.type === "css-block") {
+          if (node.children.length === 0) {
+            Transforms.insertNodes(
+              editor,
+              {
+                type: "css-declaration",
+                children: [
+                  {
+                    type: "css-property",
+                    children: [{ text: "" }],
+                  },
+                  {
+                    type: "css-value",
+                    children: [{ text: "" }],
+                  },
+                ],
+              },
+              { at: [...path, 0] }
+            );
+            return;
+          }
         }
       }
 
@@ -266,6 +403,37 @@ function App() {
                     focus: nextPoint,
                   });
                   e.preventDefault();
+                }
+              }
+            } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              const aboveMatch = Editor.above(editor, {
+                match: (node) => node.type === "css-property",
+              });
+              if (aboveMatch !== undefined) {
+                const match = Editor.above(editor, {
+                  match: (node: Node) => node.type === "css-declaration",
+                });
+                if (match !== undefined) {
+                  const [matchNode, matchPath] = match;
+                  let nextMatch;
+                  if (e.key === "ArrowDown") {
+                    nextMatch = Editor.next(editor, {
+                      at: Editor.point(editor, matchPath, { edge: "end" }),
+                    });
+                  }
+                  if (e.key === "ArrowUp") {
+                    nextMatch = Editor.previous(editor, {
+                      at: matchPath,
+                    });
+                  }
+                  if (nextMatch !== undefined) {
+                    const [_, nextPath] = nextMatch;
+                    Transforms.setSelection(editor, {
+                      anchor: { path: nextPath, offset: 0 },
+                      focus: { path: nextPath, offset: 0 },
+                    });
+                    e.preventDefault();
+                  }
                 }
               }
             }
