@@ -357,6 +357,21 @@ function App() {
             !Path.equals(nodeEntry[1], nextPoint.path)
           ) {
             const canDelete = () => {
+              const cssSelector = Editor.above(editor, {
+                match: (node) => node.type === "css-selector",
+              });
+              if (cssSelector !== undefined) {
+                const [cssSelectorNode] = cssSelector;
+                if (cssSelectorNode.children[0].text === "") {
+                  const cssRule = Editor.above(editor, {
+                    at: cssSelector[1],
+                    match: (node) => node.type === "css-rule",
+                  })!;
+                  Transforms.removeNodes(editor, { at: cssRule[1] });
+                  return;
+                }
+              }
+
               const cssDeclaration = Editor.above(editor, {
                 match: (node) => node.type === "css-declaration",
               });
