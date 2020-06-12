@@ -138,8 +138,57 @@ function CSSValueElement(props: RenderElementProps) {
       setValueNodeValue(editor, element);
     }
   }, [selected]);
+  const childText = element.children[0].text as string;
+  const suggestions = React.useMemo(() => {
+    if (!selected) {
+      return undefined;
+    }
+    if (element.value !== undefined) {
+      return undefined;
+    }
+    if (typeof element.property !== "string") {
+      return undefined;
+    }
+    const foo = ENUM_PROPERTIES[element.property];
+    return foo.filter((option) => option.startsWith(childText));
+  }, [selected, element.property, element.value, childText]);
+  const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
+    0
+  );
+  const selectedSuggestionIndexRef = React.useRef(selectedSuggestionIndex);
+  React.useEffect(() => {
+    selectedSuggestionIndexRef.current = selectedSuggestionIndex;
+  });
+  React.useEffect(() => {
+    if (suggestions !== undefined && suggestions.length > 0) {
+      editor.suggestionsHandleKeyEnter = (e: KeyboardEvent) => {
+        const value = suggestions[selectedSuggestionIndexRef.current];
+        const [nodeEntry] = Editor.nodes(editor, {
+          match: (node) => node === element,
+        });
+        const [_, nodePath] = nodeEntry;
+        Transforms.setNodes(editor, { value }, { at: nodePath });
+        Transforms.delete(editor, { at: [...nodePath, 0] });
+        e.preventDefault();
+      };
+      editor.suggestionsHandleKeyArrow = (e: KeyboardEvent) => {
+        const key = e.key;
+        setSelectedSuggestionIndex(
+          (index) =>
+            (index + (key === "ArrowUp" ? -1 : 1) + suggestions.length) %
+            suggestions.length
+        );
+        e.preventDefault();
+      };
+      return () => {
+        editor.suggestionsHandleKeyEnter = undefined;
+        editor.suggestionsHandleKeyArrow = undefined;
+      };
+    }
+  }, [suggestions]);
   return (
-    <span {...attributes}>
+    <span {...attributes} className={styles.cssValue}>
       {typeof element.value === "string" ? (
         <span
           style={{
@@ -152,6 +201,23 @@ function CSSValueElement(props: RenderElementProps) {
         </span>
       ) : null}
       {children}
+      {hasSuggestions ? (
+        <div className={styles.cssValueSuggestions} contentEditable={false}>
+          {suggestions!.map((suggestion, i) => (
+            <div
+              className={
+                styles.suggestionListItem +
+                (selectedSuggestionIndex === i
+                  ? " " + styles.suggestionListItemSelected
+                  : "")
+              }
+              key={suggestion}
+            >
+              {suggestion}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </span>
   );
 }
@@ -301,7 +367,7 @@ function App() {
                 match: (node) => node.type === "css-property",
               });
               if (cssProperty !== undefined) {
-                const [cssPropertyNode] = cssProperty;
+                const [cssPropertyNode, cssPropertyNodePath] = cssProperty;
                 if (
                   cssPropertyNode.value === undefined &&
                   cssPropertyNode.children[0].text === ""
@@ -315,10 +381,23 @@ function App() {
                   Transforms.setNodes(
                     editor,
                     { value: undefined },
-                    { match: (node) => node.type === "css-property" }
+                    { at: cssPropertyNodePath }
                   );
                   return;
                 }
+              }
+              const cssValue = Editor.above(editor, {
+                match: (node) =>
+                  node.type === "css-value" && node.value !== undefined,
+              });
+              if (cssValue !== undefined) {
+                const [, nodePath] = cssValue;
+                Transforms.setNodes(
+                  editor,
+                  { value: undefined },
+                  { at: nodePath }
+                );
+                return;
               }
               const [cssDeclarationNode] = cssDeclaration;
               const nextCssDeclaration = Editor.above(editor, {
@@ -591,6 +670,11 @@ function App() {
                 }
               }
             } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              if (editor.suggestionsHandleKeyArrow !== undefined) {
+                // @ts-ignore
+                editor.suggestionsHandleKeyArrow(e);
+                return;
+              }
               if (e.altKey) {
                 const match = Editor.above(editor, {
                   match: (node: Node) =>
@@ -650,6 +734,11 @@ function App() {
                 }
               }
             } else if (e.key === "Enter") {
+              if (editor.suggestionsHandleKeyEnter !== undefined) {
+                // @ts-ignore
+                editor.suggestionsHandleKeyEnter(e);
+                return;
+              }
               if (e.shiftKey) {
                 const aboveMatch = Editor.above(editor, {
                   match: (node) => node.type === "css-rule",

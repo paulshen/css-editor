@@ -36,3 +36,23 @@
   content: ";";
   opacity: 0.5;
 }
+
+.cssValue {
+  position: relative;
+}
+
+.cssValueSuggestions {
+  background-color: #ffffff;
+  left: 0;
+  position: absolute;
+  top: 100%;
+  z-index: 1;
+}
+
+.suggestionListItem {
+  white-space: nowrap;
+}
+
+.suggestionListItemSelected {
+  background-color: #f0f0f0;
+}
