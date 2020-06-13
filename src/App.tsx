@@ -6,6 +6,7 @@ import {
   Node,
   Path,
   Range,
+  Span,
   Transforms,
 } from "slate";
 import {
@@ -545,6 +546,38 @@ function App() {
                     { value: enumValues[nextIndex] },
                     { at: matchPath }
                   );
+                  e.preventDefault();
+                } else if (editor.selection !== null) {
+                  let from: Path;
+                  let span: Span;
+                  if (e.key === "ArrowUp") {
+                    from = Editor.first(editor, editor.selection)[1];
+                    const [, to] = Editor.first(editor, []);
+                    span = [from, to];
+                  } else {
+                    from = Editor.last(editor, editor.selection)[1];
+                    const [, to] = Editor.last(editor, []);
+                    span = [from, to];
+                  }
+                  const [first, second] = Editor.nodes(editor, {
+                    at: span,
+                    reverse: e.key === "ArrowUp",
+                    match: (node) =>
+                      node.type === "css-selector" ||
+                      node.type === "css-atrule-prelude",
+                  });
+                  let match = first;
+                  if (match !== undefined && Path.isCommon(match[1], from)) {
+                    match = second;
+                  }
+                  if (match !== undefined) {
+                    const [_, matchPath] = match;
+                    const point = { path: matchPath, offset: 0 };
+                    Transforms.setSelection(editor, {
+                      anchor: point,
+                      focus: point,
+                    });
+                  }
                   e.preventDefault();
                 }
               } else {
