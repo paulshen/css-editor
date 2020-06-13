@@ -2,6 +2,14 @@
   font-family: SF Mono;
 }
 
+.cssRule {
+  margin-bottom: 16px;
+}
+
+.cssRule:last-child {
+  margin-bottom: 0;
+}
+
 .cssRule br {
   content: "";
 }
@@ -9,10 +17,6 @@
 .cssSelector::after {
   content: " {";
   opacity: 0.5;
-}
-
-.cssBlock {
-  margin-bottom: 16px;
 }
 
 .cssBlock::after {

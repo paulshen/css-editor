@@ -42,6 +42,8 @@ function renderElement(props: RenderElementProps) {
   switch (props.element.type) {
     case "css-selector":
       return <CSSSelectorElement {...props} />;
+    case "css-atrule-prelude":
+      return <CSSSelectorElement {...props} />;
     case "css-declaration":
       return (
         <div {...attributes} className={styles.cssDeclaration}>
@@ -54,7 +56,15 @@ function renderElement(props: RenderElementProps) {
       return <CSSValueElement {...props} />;
     case "css-block":
       return <CSSBlockElement {...props} />;
+    case "css-atrule-block":
+      return <CSSBlockElement {...props} />;
     case "css-rule":
+      return (
+        <div {...attributes} className={styles.cssRule}>
+          {children}
+        </div>
+      );
+    case "css-atrule":
       return (
         <div {...attributes} className={styles.cssRule}>
           {children}
@@ -321,44 +331,54 @@ function App() {
   }, []);
   const [value, setValue] = React.useState<Node[]>([
     {
-      type: "css-rule",
+      type: "css-atrule",
       children: [
         {
-          type: "css-selector",
-          children: [
-            {
-              text: "#main",
-            },
-          ],
+          type: "css-atrule-prelude",
+          children: [{ text: "@media (min-width: 900px)" }],
         },
         {
-          type: "css-block",
+          type: "css-atrule-block",
           children: [
             {
-              type: "css-declaration",
+              type: "css-rule",
               children: [
                 {
-                  type: "css-property",
-                  value: "border",
-                  children: [{ text: "" }],
+                  type: "css-selector",
+                  children: [{ text: "#main" }],
                 },
                 {
-                  type: "css-value",
-                  children: [{ text: "1px solid black" }],
-                },
-              ],
-            },
-            {
-              type: "css-declaration",
-              children: [
-                {
-                  type: "css-property",
-                  value: "color",
-                  children: [{ text: "" }],
-                },
-                {
-                  type: "css-value",
-                  children: [{ text: "red" }],
+                  type: "css-block",
+                  children: [
+                    {
+                      type: "css-declaration",
+                      children: [
+                        {
+                          type: "css-property",
+                          value: "border",
+                          children: [{ text: "" }],
+                        },
+                        {
+                          type: "css-value",
+                          children: [{ text: "1px solid black" }],
+                        },
+                      ],
+                    },
+                    {
+                      type: "css-declaration",
+                      children: [
+                        {
+                          type: "css-property",
+                          value: "color",
+                          children: [{ text: "" }],
+                        },
+                        {
+                          type: "css-value",
+                          children: [{ text: "red" }],
+                        },
+                      ],
+                    },
+                  ],
                 },
               ],
             },
@@ -371,11 +391,7 @@ function App() {
       children: [
         {
           type: "css-selector",
-          children: [
-            {
-              text: ".foo",
-            },
-          ],
+          children: [{ text: ".foo" }],
         },
         {
           type: "css-block",
