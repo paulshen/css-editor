@@ -24,7 +24,11 @@
   padding-left: 16px;
 }
 
-.cssProperty div {
+.cssProperty {
+  position: relative;
+}
+
+.cssProperty div[data-slate-spacer="true"] {
   display: none;
 }
 
@@ -41,7 +45,7 @@
   position: relative;
 }
 
-.cssValueSuggestions {
+.suggestions {
   background-color: #ffffff;
   left: 0;
   position: absolute;
