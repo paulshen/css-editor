@@ -544,62 +544,90 @@ function App() {
                 return;
               }
               if (e.altKey) {
-                const match = Editor.above(editor, {
-                  match: (node: Node) =>
-                    node.type === "css-value" &&
-                    typeof node.property === "string" &&
-                    typeof node.value === "string" &&
-                    ENUM_PROPERTIES[node.property] !== undefined &&
-                    ENUM_PROPERTIES[node.property].includes(node.value),
-                });
-                if (match !== undefined) {
-                  const [matchNode, matchPath] = match;
-                  const enumValues =
-                    ENUM_PROPERTIES[matchNode.property as string];
-                  const index = enumValues.indexOf(matchNode.value as string);
-                  const nextIndex =
-                    (index +
-                      enumValues.length +
-                      (e.key === "ArrowDown" ? 1 : -1)) %
-                    enumValues.length;
-                  Transforms.setNodes(
-                    editor,
-                    { value: enumValues[nextIndex] },
-                    { at: matchPath }
-                  );
-                  e.preventDefault();
-                } else if (editor.selection !== null) {
-                  let from: Path;
-                  let span: Span;
-                  if (e.key === "ArrowUp") {
-                    from = Editor.first(editor, editor.selection)[1];
-                    const [, to] = Editor.first(editor, []);
-                    span = [from, to];
-                  } else {
-                    from = Editor.last(editor, editor.selection)[1];
-                    const [, to] = Editor.last(editor, []);
-                    span = [from, to];
-                  }
-                  const [first, second] = Editor.nodes(editor, {
-                    at: span,
-                    reverse: e.key === "ArrowUp",
+                if (e.shiftKey) {
+                  const cssRule = Editor.above(editor, {
                     match: (node) =>
-                      node.type === "css-selector" ||
-                      node.type === "css-atrule-prelude",
+                      node.type === "css-rule" || node.type === "css-atrule",
                   });
-                  let match = first;
-                  if (match !== undefined && Path.isCommon(match[1], from)) {
-                    match = second;
+                  if (cssRule !== undefined) {
+                    const [, cssRulePath] = cssRule;
+                    if (e.key === "ArrowUp") {
+                      if (cssRulePath[cssRulePath.length - 1] !== 0) {
+                        Transforms.moveNodes(editor, {
+                          at: cssRulePath,
+                          to: Path.previous(cssRulePath),
+                        });
+                      }
+                    } else {
+                      const [parent] = Editor.parent(editor, cssRulePath);
+                      const childIndex = cssRulePath[cssRulePath.length - 1];
+                      if (parent.children.length - 1 > childIndex) {
+                        Transforms.moveNodes(editor, {
+                          at: cssRulePath,
+                          to: Path.next(cssRulePath),
+                        });
+                      }
+                    }
+                    e.preventDefault();
                   }
+                } else {
+                  const match = Editor.above(editor, {
+                    match: (node: Node) =>
+                      node.type === "css-value" &&
+                      typeof node.property === "string" &&
+                      typeof node.value === "string" &&
+                      ENUM_PROPERTIES[node.property] !== undefined &&
+                      ENUM_PROPERTIES[node.property].includes(node.value),
+                  });
                   if (match !== undefined) {
-                    const [_, matchPath] = match;
-                    const point = { path: matchPath, offset: 0 };
-                    Transforms.setSelection(editor, {
-                      anchor: point,
-                      focus: point,
+                    const [matchNode, matchPath] = match;
+                    const enumValues =
+                      ENUM_PROPERTIES[matchNode.property as string];
+                    const index = enumValues.indexOf(matchNode.value as string);
+                    const nextIndex =
+                      (index +
+                        enumValues.length +
+                        (e.key === "ArrowDown" ? 1 : -1)) %
+                      enumValues.length;
+                    Transforms.setNodes(
+                      editor,
+                      { value: enumValues[nextIndex] },
+                      { at: matchPath }
+                    );
+                    e.preventDefault();
+                  } else if (editor.selection !== null) {
+                    let from: Path;
+                    let span: Span;
+                    if (e.key === "ArrowUp") {
+                      from = Editor.first(editor, editor.selection)[1];
+                      const [, to] = Editor.first(editor, []);
+                      span = [from, to];
+                    } else {
+                      from = Editor.last(editor, editor.selection)[1];
+                      const [, to] = Editor.last(editor, []);
+                      span = [from, to];
+                    }
+                    const [first, second] = Editor.nodes(editor, {
+                      at: span,
+                      reverse: e.key === "ArrowUp",
+                      match: (node) =>
+                        node.type === "css-selector" ||
+                        node.type === "css-atrule-prelude",
                     });
+                    let match = first;
+                    if (match !== undefined && Path.isCommon(match[1], from)) {
+                      match = second;
+                    }
+                    if (match !== undefined) {
+                      const [_, matchPath] = match;
+                      const point = { path: matchPath, offset: 0 };
+                      Transforms.setSelection(editor, {
+                        anchor: point,
+                        focus: point,
+                      });
+                    }
+                    e.preventDefault();
                   }
-                  e.preventDefault();
                 }
               } else {
                 const aboveMatch = Editor.above(editor, {
