@@ -190,6 +190,20 @@ function App() {
             !Path.equals(nodeEntry[1], nextPoint.path)
           ) {
             const canDelete = () => {
+              const cssAtRulePrelude = Editor.above(editor, {
+                match: (node) => node.type === "css-atrule-prelude",
+              });
+              if (cssAtRulePrelude !== undefined) {
+                if (cssAtRulePrelude[0].children[0].text === "") {
+                  const cssAtRule = Editor.above(editor, {
+                    at: cssAtRulePrelude[1],
+                    match: (node) => node.type === "css-atrule",
+                  })!;
+                  Transforms.removeNodes(editor, { at: cssAtRule[1] });
+                  return;
+                }
+              }
+
               const cssSelector = Editor.above(editor, {
                 match: (node) => node.type === "css-selector",
               });
