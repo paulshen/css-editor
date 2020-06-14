@@ -19,6 +19,11 @@
   opacity: 0.5;
 }
 
+.cssAtRulePrelude::before {
+  content: "@";
+  opacity: 0.5;
+}
+
 .cssBlock::after {
   content: "}";
   opacity: 0.5;

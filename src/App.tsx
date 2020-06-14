@@ -21,10 +21,17 @@ import { ENUM_PROPERTIES } from "./Constants";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
 
-function CSSSelectorElement(props: RenderElementProps) {
-  const { attributes, children, element } = props;
+function CSSSelectorElement(
+  props: RenderElementProps & { isAtRule?: boolean }
+) {
+  const { attributes, children, element, isAtRule } = props;
   return (
-    <div {...attributes} className={styles.cssSelector}>
+    <div
+      {...attributes}
+      className={
+        styles.cssSelector + (isAtRule ? " " + styles.cssAtRulePrelude : "")
+      }
+    >
       {children}
     </div>
   );
@@ -44,7 +51,7 @@ function renderElement(props: RenderElementProps) {
     case "css-selector":
       return <CSSSelectorElement {...props} />;
     case "css-atrule-prelude":
-      return <CSSSelectorElement {...props} />;
+      return <CSSSelectorElement {...props} isAtRule={true} />;
     case "css-declaration":
       return (
         <div {...attributes} className={styles.cssDeclaration}>
@@ -336,7 +343,7 @@ function App() {
       children: [
         {
           type: "css-atrule-prelude",
-          children: [{ text: "@media (min-width: 900px)" }],
+          children: [{ text: "media (min-width: 900px)" }],
         },
         {
           type: "css-atrule-block",
@@ -619,14 +626,79 @@ function App() {
                 return;
               }
               if (e.shiftKey) {
-                const aboveMatch = Editor.above(editor, {
-                  match: (node) => node.type === "css-rule",
-                });
-                if (aboveMatch !== undefined) {
-                  const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-                  insertRule(editor, Path.next(aboveMatchNodePath));
-                  e.preventDefault();
+                if (e.ctrlKey) {
+                  if (editor.selection !== null) {
+                    const insertPath = Path.next([
+                      editor.selection.anchor.path[0],
+                    ]);
+                    Transforms.insertNodes(
+                      editor,
+                      {
+                        type: "css-atrule",
+                        children: [
+                          {
+                            type: "css-atrule-prelude",
+                            children: [{ text: "" }],
+                          },
+                          {
+                            type: "css-atrule-block",
+                            children: [
+                              {
+                                type: "css-rule",
+                                children: [
+                                  {
+                                    type: "css-selector",
+                                    children: [{ text: "" }],
+                                  },
+                                  {
+                                    type: "css-block",
+                                    children: [
+                                      {
+                                        type: "css-declaration",
+                                        children: [
+                                          {
+                                            type: "css-property",
+                                            children: [{ text: "" }],
+                                          },
+                                          {
+                                            type: "css-value",
+                                            children: [{ text: "" }],
+                                          },
+                                        ],
+                                      },
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      { at: insertPath }
+                    );
+                    Transforms.setSelection(editor, {
+                      anchor: { path: insertPath, offset: 0 },
+                      focus: { path: insertPath, offset: 0 },
+                    });
+                  }
+                } else {
+                  const aboveMatch = Editor.above(editor, {
+                    match: (node) => node.type === "css-rule",
+                  });
+                  if (aboveMatch !== undefined) {
+                    const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+                    insertRule(editor, Path.next(aboveMatchNodePath));
+                  } else {
+                    const aboveAtRule = Editor.above(editor, {
+                      match: (node) => node.type === "css-atrule-prelude",
+                    });
+                    if (aboveAtRule !== undefined) {
+                      const [, aboveAtRulePath] = aboveAtRule;
+                      insertRule(editor, [...Path.next(aboveAtRulePath), 0]);
+                    }
+                  }
                 }
+                e.preventDefault();
               }
             } else if (e.key === "c") {
               convertNodeToEdit();
