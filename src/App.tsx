@@ -793,6 +793,23 @@ function App() {
                   e.preventDefault();
                 }
               }
+            } else if (e.key === "Escape") {
+              const aboveBlock = Editor.above(editor, {
+                match: (node) =>
+                  node.type === "css-block" || node.type === "css-atrule-block",
+              });
+              if (aboveBlock !== undefined) {
+                const [, aboveBlockPath] = aboveBlock;
+                const selectorEdges = Editor.edges(
+                  editor,
+                  Path.previous(aboveBlockPath)
+                );
+                Transforms.setSelection(editor, {
+                  anchor: selectorEdges[0],
+                  focus: selectorEdges[1],
+                });
+              }
+              e.preventDefault();
             }
           }}
         />
