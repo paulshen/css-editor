@@ -2,6 +2,12 @@
   font-family: SF Mono;
 }
 
+.textarea {
+  font-family: SF Mono;
+  width: 80vw;
+  height: 80vh;
+}
+
 .cssRule {
   margin-bottom: 16px;
 }
