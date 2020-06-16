@@ -323,7 +323,14 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     if (e.shiftKey) {
       if (e.ctrlKey) {
         if (editor.selection !== null) {
-          const insertPath = Path.next([editor.selection.anchor.path[0]]);
+          const aboveRule = Editor.above(editor, {
+            match: (node) =>
+              node.type === "css-atrule" || node.type === "css-rule",
+          });
+          let insertPath = [0];
+          if (aboveRule !== undefined) {
+            insertPath = Path.next(aboveRule[1]);
+          }
           Transforms.insertNodes(
             editor,
             {
@@ -339,28 +346,8 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
                     {
                       type: "css-rule",
                       children: [
-                        {
-                          type: "css-selector",
-                          children: [{ text: "" }],
-                        },
-                        {
-                          type: "css-block",
-                          children: [
-                            {
-                              type: "css-declaration",
-                              children: [
-                                {
-                                  type: "css-property",
-                                  children: [{ text: "" }],
-                                },
-                                {
-                                  type: "css-value",
-                                  children: [{ text: "" }],
-                                },
-                              ],
-                            },
-                          ],
-                        },
+                        { type: "css-selector", children: [{ text: "" }] },
+                        { type: "css-block", children: [] },
                       ],
                     },
                   ],
@@ -375,21 +362,16 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
           });
         }
       } else {
+        let insertPath = [0];
         const aboveMatch = Editor.above(editor, {
-          match: (node) => node.type === "css-rule",
+          match: (node) =>
+            node.type === "css-rule" || node.type === "css-atrule",
         });
         if (aboveMatch !== undefined) {
-          const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-          insertRule(editor, Path.next(aboveMatchNodePath));
-        } else {
-          const aboveAtRule = Editor.above(editor, {
-            match: (node) => node.type === "css-atrule-prelude",
-          });
-          if (aboveAtRule !== undefined) {
-            const [, aboveAtRulePath] = aboveAtRule;
-            insertRule(editor, [...Path.next(aboveAtRulePath), 0]);
-          }
+          const [, aboveMatchNodePath] = aboveMatch;
+          insertPath = Path.next(aboveMatchNodePath);
         }
+        insertRule(editor, insertPath);
       }
       e.preventDefault();
     }
