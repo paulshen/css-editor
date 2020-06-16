@@ -20,6 +20,7 @@ import styles from "./App.module.css";
 import { ENUM_PROPERTIES } from "./Constants";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
+import { nodeAtOrAbove } from "./Utils";
 
 function CSSSelectorElement(
   props: RenderElementProps & { isAtRule?: boolean }
@@ -86,9 +87,7 @@ function renderElement(props: RenderElementProps) {
 function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
   const convertNodeToEdit = () => {
     {
-      const aboveMatch = Editor.above(editor, {
-        match: (node) => node.type === "css-property",
-      });
+      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
       if (aboveMatch !== undefined) {
         const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
         if (typeof aboveMatchNode.value === "string") {
@@ -117,9 +116,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       }
     }
     {
-      const aboveMatch = Editor.above(editor, {
-        match: (node) => node.type === "css-value",
-      });
+      const aboveMatch = nodeAtOrAbove(editor, ["css-value"]);
       if (aboveMatch !== undefined) {
         const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
         if (typeof aboveMatchNode.value === "string") {
@@ -175,9 +172,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     }
     if (e.altKey) {
       if (e.shiftKey) {
-        const cssDeclaration = Editor.above(editor, {
-          match: (node) => node.type === "css-declaration",
-        });
+        const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
         if (cssDeclaration !== undefined) {
           const [, cssDeclarationPath] = cssDeclaration;
           if (e.key === "ArrowUp") {
@@ -202,10 +197,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
           return;
         }
 
-        const cssRule = Editor.above(editor, {
-          match: (node) =>
-            node.type === "css-rule" || node.type === "css-atrule",
-        });
+        const cssRule = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
         if (cssRule !== undefined) {
           const [, cssRulePath] = cssRule;
           if (e.key === "ArrowUp") {
@@ -283,13 +275,9 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         e.preventDefault();
       }
     } else {
-      const aboveMatch = Editor.above(editor, {
-        match: (node) => node.type === "css-property",
-      });
+      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
       if (aboveMatch !== undefined) {
-        const match = Editor.above(editor, {
-          match: (node: Node) => node.type === "css-declaration",
-        });
+        const match = nodeAtOrAbove(editor, ["css-declaration"]);
         if (match !== undefined) {
           const [matchNode, matchPath] = match;
           let nextMatch;
@@ -323,10 +311,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     if (e.shiftKey) {
       if (e.ctrlKey) {
         if (editor.selection !== null) {
-          const aboveRule = Editor.above(editor, {
-            match: (node) =>
-              node.type === "css-atrule" || node.type === "css-rule",
-          });
+          const aboveRule = nodeAtOrAbove(editor, ["css-atrule", "css-rule"]);
           let insertPath = [0];
           if (aboveRule !== undefined) {
             insertPath = Path.next(aboveRule[1]);
@@ -363,10 +348,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         }
       } else {
         let insertPath = [0];
-        const aboveMatch = Editor.above(editor, {
-          match: (node) =>
-            node.type === "css-rule" || node.type === "css-atrule",
-        });
+        const aboveMatch = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
         if (aboveMatch !== undefined) {
           const [, aboveMatchNodePath] = aboveMatch;
           insertPath = Path.next(aboveMatchNodePath);
@@ -379,9 +361,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     convertNodeToEdit();
   } else if (e.key === "Backspace") {
     if (e.shiftKey) {
-      const atRulePrelude = Editor.above(editor, {
-        match: (node) => node.type === "css-atrule-prelude",
-      });
+      const atRulePrelude = nodeAtOrAbove(editor, ["css-atrule-prelude"]);
       if (atRulePrelude !== undefined) {
         const [, atRulePreludePath] = atRulePrelude;
         Transforms.unwrapNodes(editor, {
@@ -395,10 +375,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       }
     }
   } else if (e.key === "Escape") {
-    const aboveBlock = Editor.above(editor, {
-      match: (node) =>
-        node.type === "css-block" || node.type === "css-atrule-block",
-    });
+    const aboveBlock = nodeAtOrAbove(editor, ["css-block", "css-atrule-block"]);
     if (aboveBlock !== undefined) {
       const [, aboveBlockPath] = aboveBlock;
       const selectorEdges = Editor.edges(editor, Path.previous(aboveBlockPath));
@@ -524,9 +501,9 @@ function SlateEditor({
             !Path.equals(nodeEntry[1], nextPoint.path)
           ) {
             const canDelete = () => {
-              const cssAtRulePrelude = Editor.above(editor, {
-                match: (node) => node.type === "css-atrule-prelude",
-              });
+              const cssAtRulePrelude = nodeAtOrAbove(editor, [
+                "css-atrule-prelude",
+              ]);
               if (cssAtRulePrelude !== undefined) {
                 if (cssAtRulePrelude[0].children[0].text === "") {
                   const cssAtRule = Editor.above(editor, {
@@ -538,9 +515,7 @@ function SlateEditor({
                 }
               }
 
-              const cssSelector = Editor.above(editor, {
-                match: (node) => node.type === "css-selector",
-              });
+              const cssSelector = nodeAtOrAbove(editor, ["css-selector"]);
               if (cssSelector !== undefined) {
                 const [cssSelectorNode] = cssSelector;
                 if (cssSelectorNode.children[0].text === "") {
@@ -553,15 +528,11 @@ function SlateEditor({
                 }
               }
 
-              const cssDeclaration = Editor.above(editor, {
-                match: (node) => node.type === "css-declaration",
-              });
+              const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
               if (cssDeclaration === undefined) {
                 return false;
               }
-              const cssProperty = Editor.above(editor, {
-                match: (node) => node.type === "css-property",
-              });
+              const cssProperty = nodeAtOrAbove(editor, ["css-property"]);
               if (cssProperty !== undefined) {
                 const [cssPropertyNode, cssPropertyNodePath] = cssProperty;
                 if (

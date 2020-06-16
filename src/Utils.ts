@@ -1,4 +1,4 @@
-import { Element, Editor, Path, Transforms } from "slate";
+import { Editor, Element, Node, NodeEntry, Path, Transforms } from "slate";
 import { ReactEditor } from "slate-react";
 import { ENUM_PROPERTIES } from "./Constants";
 
@@ -44,4 +44,15 @@ export function setValueNodeValue(
       Transforms.setNodes(editor, { value: childText }, { at: nodePath });
     }
   }
+}
+
+export function nodeAtOrAbove(
+  editor: Editor,
+  nodeTypes: Array<string>
+): NodeEntry<Element> | undefined {
+  const [nodeEntry] = Editor.levels(editor, {
+    match: (node) => nodeTypes.includes(node.type as string),
+    reverse: true,
+  });
+  return nodeEntry as NodeEntry<Element> | undefined;
 }
