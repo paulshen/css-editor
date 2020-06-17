@@ -20,6 +20,14 @@ import styles from "./App.module.css";
 import { ENUM_PROPERTIES } from "./Constants";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
+import {
+  convertCssPropertyToEdit,
+  convertCssValueToEdit,
+  insertAtRule,
+  insertDeclaration,
+  insertRule,
+} from "./Mutations";
+import SlateEditorPanel from "./SlateEditorPanel";
 import { nodeAtOrAbove } from "./Utils";
 
 function CSSSelectorElement(
@@ -85,51 +93,6 @@ function renderElement(props: RenderElementProps) {
 }
 
 function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
-  const convertNodeToEdit = () => {
-    {
-      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
-      if (aboveMatch !== undefined) {
-        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-        if (typeof aboveMatchNode.value === "string") {
-          Transforms.setNodes(editor, { value: undefined });
-          Transforms.insertText(editor, aboveMatchNode.value);
-          Transforms.setSelection(editor, {
-            anchor: { path: aboveMatchNodePath, offset: 0 },
-          });
-          const valueNodeEntry = Editor.node(
-            editor,
-            Path.next(aboveMatchNodePath)
-          );
-          const value = valueNodeEntry[0].value;
-          if (typeof value === "string") {
-            Transforms.setNodes(
-              editor,
-              { value: undefined },
-              { at: valueNodeEntry[1] }
-            );
-            Transforms.insertText(editor, value, {
-              at: valueNodeEntry[1],
-            });
-          }
-          e.preventDefault();
-        }
-      }
-    }
-    {
-      const aboveMatch = nodeAtOrAbove(editor, ["css-value"]);
-      if (aboveMatch !== undefined) {
-        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-        if (typeof aboveMatchNode.value === "string") {
-          Transforms.setNodes(editor, { value: undefined });
-          Transforms.insertText(editor, aboveMatchNode.value);
-          Transforms.setSelection(editor, {
-            anchor: { path: aboveMatchNodePath, offset: 0 },
-          });
-          e.preventDefault();
-        }
-      }
-    }
-  };
   if (e.key === "Tab") {
     if (editor.selection !== null) {
       let nextPoint;
@@ -316,35 +279,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
           if (aboveRule !== undefined) {
             insertPath = Path.next(aboveRule[1]);
           }
-          Transforms.insertNodes(
-            editor,
-            {
-              type: "css-atrule",
-              children: [
-                {
-                  type: "css-atrule-prelude",
-                  children: [{ text: "" }],
-                },
-                {
-                  type: "css-atrule-block",
-                  children: [
-                    {
-                      type: "css-rule",
-                      children: [
-                        { type: "css-selector", children: [{ text: "" }] },
-                        { type: "css-block", children: [] },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-            { at: insertPath }
-          );
-          Transforms.setSelection(editor, {
-            anchor: { path: insertPath, offset: 0 },
-            focus: { path: insertPath, offset: 0 },
-          });
+          insertAtRule(editor, insertPath);
         }
       } else {
         let insertPath = [0];
@@ -358,7 +293,26 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       e.preventDefault();
     }
   } else if (e.key === "c") {
-    convertNodeToEdit();
+    {
+      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
+      if (aboveMatch !== undefined) {
+        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+        if (typeof aboveMatchNode.value === "string") {
+          convertCssPropertyToEdit(editor, aboveMatch);
+          e.preventDefault();
+        }
+      }
+    }
+    {
+      const aboveMatch = nodeAtOrAbove(editor, ["css-value"]);
+      if (aboveMatch !== undefined) {
+        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+        if (typeof aboveMatchNode.value === "string") {
+          convertCssValueToEdit(editor, aboveMatch);
+          e.preventDefault();
+        }
+      }
+    }
   } else if (e.key === "Backspace") {
     if (e.shiftKey) {
       const atRulePrelude = nodeAtOrAbove(editor, ["css-atrule-prelude"]);
@@ -386,24 +340,6 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     }
     e.preventDefault();
   }
-}
-
-function insertRule(editor: Editor, insertPath: Path) {
-  Transforms.insertNodes(
-    editor,
-    {
-      type: "css-rule",
-      children: [
-        { type: "css-selector", children: [{ text: "" }] },
-        { type: "css-block", children: [] },
-      ],
-    },
-    { at: insertPath }
-  );
-  Transforms.setSelection(editor, {
-    anchor: { path: insertPath, offset: 0 },
-    focus: { path: insertPath, offset: 0 },
-  });
 }
 
 function SlateEditor({
@@ -461,21 +397,7 @@ function SlateEditor({
         }
       }
       if (newDeclarationPath !== undefined) {
-        Transforms.insertNodes(
-          editor,
-          {
-            type: "css-declaration",
-            children: [
-              { type: "css-property", children: [{ text: "" }] },
-              { type: "css-value", children: [{ text: "" }] },
-            ],
-          },
-          { at: newDeclarationPath }
-        );
-        Transforms.setSelection(editor, {
-          anchor: { path: newDeclarationPath, offset: 0 },
-          focus: { path: newDeclarationPath, offset: 0 },
-        });
+        insertDeclaration(editor, newDeclarationPath);
         return;
       }
       insertBreak();
@@ -672,6 +594,7 @@ function SlateEditor({
             handleKeyDown(editor, e);
           }}
         />
+        <SlateEditorPanel />
       </Slate>
     </div>
   );

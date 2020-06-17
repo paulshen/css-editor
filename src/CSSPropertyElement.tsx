@@ -38,7 +38,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
         });
         const [_, nodePath] = nodeEntry;
         Transforms.setNodes(editor, { value }, { at: nodePath });
-        Transforms.delete(editor, { at: [...nodePath, 0] });
+        Transforms.delete(editor, { at: [...nodePath, 0], voids: true });
         const valueNodePath = Path.next(nodePath);
         Transforms.setNodes(editor, { property: value }, { at: valueNodePath });
         const valueNodePoint = { path: valueNodePath, offset: 0 };
@@ -102,7 +102,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
       ) : null}
       {children}
       <span contentEditable={false} className={styles.colon}>
-        :{" "}
+        {": "}
       </span>
       {hasSuggestions ? (
         <div className={styles.suggestions} contentEditable={false}>
