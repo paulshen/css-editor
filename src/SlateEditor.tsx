@@ -26,6 +26,7 @@ import {
   insertAtRule,
   insertDeclaration,
   insertRule,
+  rotateEnumValue,
 } from "./Mutations";
 import SlateEditorPanel from "./SlateEditorPanel";
 import { nodeAtOrAbove } from "./Utils";
@@ -193,17 +194,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
           ENUM_PROPERTIES[node.property].includes(node.value),
       });
       if (match !== undefined) {
-        const [matchNode, matchPath] = match;
-        const enumValues = ENUM_PROPERTIES[matchNode.property as string];
-        const index = enumValues.indexOf(matchNode.value as string);
-        const nextIndex =
-          (index + enumValues.length + (e.key === "ArrowDown" ? 1 : -1)) %
-          enumValues.length;
-        Transforms.setNodes(
-          editor,
-          { value: enumValues[nextIndex] },
-          { at: matchPath }
-        );
+        rotateEnumValue(editor, match, e.key === "ArrowDown");
         e.preventDefault();
       } else if (editor.selection !== null) {
         let from: Path;
@@ -252,6 +243,7 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
           if (e.key === "ArrowUp") {
             nextMatch = Editor.previous(editor, {
               at: matchPath,
+              match: (node) => node.type === "css-property",
             });
           }
           if (nextMatch !== undefined) {
