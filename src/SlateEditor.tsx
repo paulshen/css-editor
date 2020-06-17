@@ -5,6 +5,7 @@ import {
   Element,
   Node,
   Path,
+  Point,
   Range,
   Span,
   Transforms,
@@ -330,6 +331,43 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         focus: selectorEdges[1],
       });
     }
+    e.preventDefault();
+  } else if (e.key === "a" && e.metaKey && editor.selection !== null) {
+    const nodeTypes = [
+      "css-property",
+      "css-value",
+      "css-declaration",
+      "css-rule",
+      "css-selector",
+      "css-atrule",
+      "css-atrule-prelude",
+    ];
+    const aboveMatch = nodeAtOrAbove(editor, nodeTypes);
+    let abovePath: Path = [];
+    if (aboveMatch !== undefined) {
+      abovePath = aboveMatch[1];
+      const aboveEdges = Editor.edges(editor, abovePath);
+      const selectionEdges = Range.edges(editor.selection);
+      if (
+        Point.equals(aboveEdges[0], selectionEdges[0]) &&
+        Point.equals(aboveEdges[1], selectionEdges[1])
+      ) {
+        const aboveMatch = Editor.above(editor, {
+          at: abovePath,
+          match: (node) => nodeTypes.includes(node.type as string),
+        });
+        if (aboveMatch !== undefined) {
+          abovePath = aboveMatch[1];
+        } else {
+          abovePath = [];
+        }
+      }
+    }
+    const edges = Editor.edges(editor, abovePath);
+    Transforms.setSelection(editor, {
+      anchor: edges[0],
+      focus: edges[1],
+    });
     e.preventDefault();
   }
 }

@@ -98,7 +98,8 @@ function Actions({ editor }: { editor: Editor }) {
 
   let insertDeclarationPath: Path | undefined;
   const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
-  const cssRule = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
+  const cssRule = nodeAtOrAbove(editor, ["css-rule"]);
+  const cssAtRule = nodeAtOrAbove(editor, ["css-atrule"]);
 
   if (cssDeclaration !== undefined) {
     const [, cssDeclarationPath] = cssDeclaration;
@@ -208,6 +209,56 @@ function Actions({ editor }: { editor: Editor }) {
             disabled={childIndex === parentNode.children.length - 1}
           >
             Move Block Down
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (cssAtRule !== undefined) {
+    const [, cssAtRulePath] = cssAtRule;
+    const [parentNode] = Editor.parent(editor, cssAtRulePath);
+    const childIndex = cssAtRulePath[cssAtRulePath.length - 1];
+
+    buttons.push(
+      <div>
+        <div>At Rule</div>
+        <div>
+          <button
+            onMouseDown={(e) => {
+              Transforms.delete(editor, { at: cssAtRulePath });
+              e.preventDefault();
+            }}
+          >
+            Delete At Rule
+          </button>
+        </div>
+        <div>
+          <button
+            onMouseDown={(e) => {
+              Transforms.moveNodes(editor, {
+                at: cssAtRulePath,
+                to: Path.previous(cssAtRulePath),
+              });
+              e.preventDefault();
+            }}
+            disabled={cssAtRulePath[cssAtRulePath.length - 1] === 0}
+          >
+            Move At Rule Up
+          </button>
+        </div>
+        <div>
+          <button
+            onMouseDown={(e) => {
+              Transforms.moveNodes(editor, {
+                at: cssAtRulePath,
+                to: Path.next(cssAtRulePath),
+              });
+              e.preventDefault();
+            }}
+            disabled={childIndex === parentNode.children.length - 1}
+          >
+            Move At Rule Down
           </button>
         </div>
       </div>
