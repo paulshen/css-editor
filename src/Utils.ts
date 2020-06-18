@@ -1,6 +1,6 @@
-import { Editor, Element, Node, NodeEntry, Path, Transforms } from "slate";
+import { Editor, Element, NodeEntry, Path, Transforms } from "slate";
 import { ReactEditor } from "slate-react";
-import { ENUM_PROPERTIES } from "./Constants";
+import { getValidPropertyValues } from "./CSSData";
 
 export function setValueNodeValue(
   editor: ReactEditor,
@@ -26,22 +26,20 @@ export function setValueNodeValue(
     Array.isArray(element.children)
   ) {
     const childText = element.children[0].text;
-    if (
-      typeof childText === "string" &&
-      typeof element.property === "string" &&
-      ENUM_PROPERTIES[element.property] !== undefined &&
-      ENUM_PROPERTIES[element.property].includes(childText)
-    ) {
-      let nodePath = valueNodePath;
-      if (nodePath === undefined) {
-        const [valueNodeEntry] = Editor.nodes(editor, {
-          at: [],
-          match: (node) => node === element,
-        });
-        nodePath = valueNodeEntry[1];
+    if (typeof childText === "string" && typeof element.property === "string") {
+      const enumValues = getValidPropertyValues(element.property);
+      if (enumValues !== undefined && enumValues.includes(childText)) {
+        let nodePath = valueNodePath;
+        if (nodePath === undefined) {
+          const [valueNodeEntry] = Editor.nodes(editor, {
+            at: [],
+            match: (node) => node === element,
+          });
+          nodePath = valueNodeEntry[1];
+        }
+        Transforms.delete(editor, { at: [...nodePath, 0] });
+        Transforms.setNodes(editor, { value: childText }, { at: nodePath });
       }
-      Transforms.delete(editor, { at: [...nodePath, 0] });
-      Transforms.setNodes(editor, { value: childText }, { at: nodePath });
     }
   }
 }

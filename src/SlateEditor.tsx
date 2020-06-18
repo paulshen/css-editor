@@ -19,7 +19,7 @@ import {
   withReact,
 } from "slate-react";
 import styles from "./App.module.css";
-import { ENUM_PROPERTIES } from "./Constants";
+import { getValidPropertyValues } from "./CSSData";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
 import {
@@ -194,12 +194,17 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         return;
       }
       const match = Editor.above(editor, {
-        match: (node: Node) =>
-          node.type === "css-value" &&
-          typeof node.property === "string" &&
-          typeof node.value === "string" &&
-          ENUM_PROPERTIES[node.property] !== undefined &&
-          ENUM_PROPERTIES[node.property].includes(node.value),
+        match: (node: Node) => {
+          if (
+            node.type !== "css-value" ||
+            typeof node.property !== "string" ||
+            typeof node.value !== "string"
+          ) {
+            return false;
+          }
+          const enumValues = getValidPropertyValues(node.property);
+          return enumValues !== undefined && enumValues.includes(node.value);
+        },
       });
       if (match !== undefined) {
         rotateEnumValue(editor, match, e.key === "ArrowDown");

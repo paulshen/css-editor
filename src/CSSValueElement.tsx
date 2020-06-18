@@ -2,7 +2,7 @@ import * as React from "react";
 import { Editor, Range, Transforms } from "slate";
 import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
-import { ENUM_PROPERTIES } from "./Constants";
+import { getValidPropertyValues } from "./CSSData";
 import { setValueNodeValue } from "./Utils";
 
 export default function CSSValueElement(props: RenderElementProps) {
@@ -38,11 +38,13 @@ export default function CSSValueElement(props: RenderElementProps) {
     if (typeof element.property !== "string") {
       return undefined;
     }
-    const enumValues = ENUM_PROPERTIES[element.property];
+    const enumValues = getValidPropertyValues(element.property);
     if (enumValues === undefined) {
       return undefined;
     }
-    return enumValues.filter((option) => option.startsWith(childText));
+    return enumValues
+      .filter((option) => option.startsWith(childText))
+      .slice(0, 8);
   }, [focused, element.property, element.value, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(

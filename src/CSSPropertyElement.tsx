@@ -2,7 +2,7 @@ import * as React from "react";
 import { Editor, Path, Range, Transforms } from "slate";
 import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
-import { ENUM_PROPERTIES } from "./Constants";
+import { completePropertyName, isValidProperty } from "./CSSData";
 import { setValueNodeValue } from "./Utils";
 
 export function CSSPropertyElement(props: RenderElementProps) {
@@ -33,9 +33,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
     if (childText.length < 1) {
       return undefined;
     }
-    return Object.keys(ENUM_PROPERTIES).filter((option) =>
-      option.startsWith(childText)
-    );
+    return completePropertyName(childText).slice(0, 8);
   }, [focused, element.value, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
@@ -89,10 +87,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
   React.useEffect(() => {
     if (!focused && element.value === undefined) {
       const childText = element.children[0].text;
-      if (
-        typeof childText === "string" &&
-        ENUM_PROPERTIES[childText] !== undefined
-      ) {
+      if (typeof childText === "string" && isValidProperty(childText)) {
         const [nodeEntry] = Editor.nodes(editor, {
           at: [],
           match: (node) => node === element,

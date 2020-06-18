@@ -1,5 +1,5 @@
 import { Editor, Node, NodeEntry, Path, Transforms } from "slate";
-import { ENUM_PROPERTIES } from "./Constants";
+import { getValidPropertyValues } from "./CSSData";
 
 export function insertRule(editor: Editor, insertPath: Path) {
   Transforms.insertNodes(
@@ -116,7 +116,7 @@ export function rotateEnumValue(
   isDownDirection: boolean
 ) {
   const [valueNode, valuePath] = valueNodeEntry;
-  const enumValues = ENUM_PROPERTIES[valueNode.property as string];
+  const enumValues = getValidPropertyValues(valueNode.property as string)!;
   const index = enumValues.indexOf(valueNode.value as string);
   const nextIndex =
     (index + enumValues.length + (isDownDirection ? 1 : -1)) %

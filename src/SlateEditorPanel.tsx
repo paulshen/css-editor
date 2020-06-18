@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Editor, Element, Path, Transforms } from "slate";
 import { useSlate } from "slate-react";
-import { ENUM_PROPERTIES } from "./Constants";
+import { getValidPropertyValues } from "./CSSData";
 import {
   convertCssPropertyToEdit,
   convertCssValueToEdit,
@@ -55,7 +55,7 @@ function Actions({ editor }: { editor: Editor }) {
         label: string;
         onClick: (e: React.MouseEvent) => void;
       }> = [];
-      const enumValues = ENUM_PROPERTIES[cssValueNode.property];
+      const enumValues = getValidPropertyValues(cssValueNode.value);
       if (
         enumValues !== undefined &&
         enumValues.indexOf(cssValueNode.value) !== -1
