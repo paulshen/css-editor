@@ -30,6 +30,9 @@ export function CSSPropertyElement(props: RenderElementProps) {
     if (element.value !== undefined) {
       return undefined;
     }
+    if (childText.length < 1) {
+      return undefined;
+    }
     return Object.keys(ENUM_PROPERTIES).filter((option) =>
       option.startsWith(childText)
     );

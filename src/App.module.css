@@ -62,6 +62,7 @@
 
 .suggestions {
   background-color: #ffffff;
+  border: 1px solid #f0f0f0;
   left: 0;
   position: absolute;
   top: 100%;
