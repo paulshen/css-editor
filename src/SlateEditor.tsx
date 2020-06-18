@@ -10,6 +10,7 @@ import {
   Span,
   Transforms,
 } from "slate";
+import { withHistory } from "slate-history";
 import {
   DefaultElement,
   Editable,
@@ -380,7 +381,7 @@ function SlateEditor({
   setValue: (value: Node[]) => void;
 }) {
   const editor = React.useMemo(() => {
-    const editor = withReact(createEditor());
+    const editor = withHistory(withReact(createEditor()));
     const {
       isVoid,
       isInline,
