@@ -3,6 +3,7 @@ import { Editor, Path, Range, Transforms } from "slate";
 import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
 import { completePropertyName, isValidProperty } from "./CSSData";
+import { convertCssPropertyToEdit } from "./Mutations";
 import { setValueNodeValue } from "./Utils";
 
 export function CSSPropertyElement(props: RenderElementProps) {
@@ -10,11 +11,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
   const editor = useSlate();
   const selected = useSelected();
   let focused = false;
-  if (
-    element.value === undefined &&
-    editor.selection !== null &&
-    Range.isCollapsed(editor.selection)
-  ) {
+  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
     const aboveProperty = Editor.above(editor, {
       match: (node) => node.type === "css-property",
     });
@@ -27,14 +24,14 @@ export function CSSPropertyElement(props: RenderElementProps) {
     if (!focused) {
       return undefined;
     }
-    if (element.value !== undefined) {
+    if (element.token === true) {
       return undefined;
     }
     if (childText.length < 1) {
       return undefined;
     }
     return completePropertyName(childText).slice(0, 8);
-  }, [focused, element.value, childText]);
+  }, [focused, element.token, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
@@ -51,8 +48,9 @@ export function CSSPropertyElement(props: RenderElementProps) {
           match: (node) => node === element,
         });
         const [_, nodePath] = nodeEntry;
-        Transforms.setNodes(editor, { value }, { at: nodePath });
-        Transforms.delete(editor, { at: [...nodePath, 0], voids: true });
+        Transforms.delete(editor, { at: [...nodePath, 0] });
+        Transforms.insertText(editor, value, { at: [...nodePath, 0] });
+        Transforms.setNodes(editor, { token: true }, { at: nodePath });
         const valueNodePath = Path.next(nodePath);
         Transforms.setNodes(editor, { property: value }, { at: valueNodePath });
         const valueNodePoint = { path: valueNodePath, offset: 0 };
@@ -85,15 +83,13 @@ export function CSSPropertyElement(props: RenderElementProps) {
     }
   }, [suggestions]);
   React.useEffect(() => {
-    if (!focused && element.value === undefined) {
-      const childText = element.children[0].text;
-      if (typeof childText === "string" && isValidProperty(childText)) {
+    if (!focused && element.token !== true) {
+      if (isValidProperty(childText)) {
         const [nodeEntry] = Editor.nodes(editor, {
           at: [],
           match: (node) => node === element,
         });
-        Transforms.delete(editor, { at: [...nodeEntry[1], 0] });
-        Transforms.setNodes(editor, { value: childText }, { at: nodeEntry[1] });
+        Transforms.setNodes(editor, { token: true }, { at: nodeEntry[1] });
         const valueNodePath = Path.next(nodeEntry[1]);
         const [valueNode] = Editor.node(editor, valueNodePath);
         Transforms.setNodes(
@@ -105,20 +101,23 @@ export function CSSPropertyElement(props: RenderElementProps) {
       }
     }
   }, [focused]);
+  React.useEffect(() => {
+    if (element.token === true && !isValidProperty(childText)) {
+      const [nodeEntry] = Editor.nodes(editor, {
+        match: (node) => node === element,
+      });
+      convertCssPropertyToEdit(editor, nodeEntry);
+    }
+  }, [childText]);
   return (
     <span {...attributes} className={styles.cssProperty}>
-      {typeof element.value === "string" ? (
-        <span
-          style={{
-            backgroundColor: selected ? "#e0e0e0" : undefined,
-            color: "green",
-          }}
-          contentEditable={false}
-        >
-          {element.value}
-        </span>
-      ) : null}
-      {children}
+      <span
+        style={{
+          color: element.token === true ? "green" : undefined,
+        }}
+      >
+        {children}
+      </span>
       <span contentEditable={false} className={styles.colon}>
         {": "}
       </span>

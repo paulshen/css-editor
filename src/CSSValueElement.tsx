@@ -3,6 +3,7 @@ import { Editor, Range, Transforms } from "slate";
 import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
 import { getValidPropertyValues } from "./CSSData";
+import { convertCssValueToEdit } from "./Mutations";
 import { setValueNodeValue } from "./Utils";
 
 export default function CSSValueElement(props: RenderElementProps) {
@@ -10,11 +11,7 @@ export default function CSSValueElement(props: RenderElementProps) {
   const editor = useSlate();
   const selected = useSelected();
   let focused = false;
-  if (
-    element.value === undefined &&
-    editor.selection !== null &&
-    Range.isCollapsed(editor.selection)
-  ) {
+  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
     const aboveValue = Editor.above(editor, {
       match: (node) => node.type === "css-value",
     });
@@ -32,7 +29,7 @@ export default function CSSValueElement(props: RenderElementProps) {
     if (!focused) {
       return undefined;
     }
-    if (element.value !== undefined) {
+    if (element.token === true) {
       return undefined;
     }
     if (typeof element.property !== "string") {
@@ -45,7 +42,7 @@ export default function CSSValueElement(props: RenderElementProps) {
     return enumValues
       .filter((option) => option.startsWith(childText))
       .slice(0, 8);
-  }, [focused, element.property, element.value, childText]);
+  }, [focused, element.property, element.token, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
@@ -62,11 +59,12 @@ export default function CSSValueElement(props: RenderElementProps) {
           match: (node) => node === element,
         });
         const [_, nodePath] = nodeEntry;
-        Transforms.setNodes(editor, { value }, { at: nodePath });
-        Transforms.delete(editor, { at: [...nodePath, 0], voids: true });
+        Transforms.delete(editor, { at: [...nodePath, 0] });
+        Transforms.insertText(editor, value, { at: [...nodePath, 0] });
+        Transforms.setNodes(editor, { token: true }, { at: nodePath });
         Transforms.setSelection(editor, {
-          anchor: { path: nodePath, offset: 0 },
-          focus: { path: nodePath, offset: 0 },
+          anchor: { path: nodePath, offset: value.length },
+          focus: { path: nodePath, offset: value.length },
         });
         e.preventDefault();
       };
@@ -92,20 +90,30 @@ export default function CSSValueElement(props: RenderElementProps) {
       };
     }
   }, [suggestions]);
+  React.useEffect(() => {
+    if (element.token === true) {
+      let removeToken = element.property === undefined;
+      if (typeof element.property === "string") {
+        const enumValues = getValidPropertyValues(element.property);
+        removeToken = !enumValues?.includes(childText);
+      }
+      if (removeToken) {
+        const [nodeEntry] = Editor.nodes(editor, {
+          match: (node) => node === element,
+        });
+        convertCssValueToEdit(editor, nodeEntry);
+      }
+    }
+  }, [childText]);
   return (
     <span {...attributes} className={styles.cssValue}>
-      {typeof element.value === "string" ? (
-        <span
-          style={{
-            backgroundColor: selected ? "#e0e0e0" : undefined,
-            color: "green",
-          }}
-          contentEditable={false}
-        >
-          {element.value}
-        </span>
-      ) : null}
-      {children}
+      <span
+        style={{
+          color: element.token === true ? "green" : undefined,
+        }}
+      >
+        {children}
+      </span>
       {hasSuggestions ? (
         <div className={styles.suggestions} contentEditable={false}>
           {suggestions!.map((suggestion, i) => (

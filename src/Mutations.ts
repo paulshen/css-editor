@@ -24,27 +24,12 @@ export function convertCssPropertyToEdit(
   propertyNodeEntry: NodeEntry<Node>
 ) {
   const [propertyNode, propertyNodePath] = propertyNodeEntry;
-  Transforms.setNodes(editor, { value: undefined });
-  Transforms.insertText(editor, propertyNode.value as string);
-  Transforms.setSelection(editor, {
-    anchor: { path: propertyNodePath, offset: 0 },
-  });
-  const valueNodeEntry = Editor.node(editor, Path.next(propertyNodePath));
-  const value = valueNodeEntry[0].value;
-  if (typeof value === "string") {
-    Transforms.setNodes(
-      editor,
-      { property: undefined, value: undefined },
-      { at: valueNodeEntry[1] }
-    );
-    Transforms.insertText(editor, value, {
-      at: valueNodeEntry[1],
-    });
-  }
+  Transforms.setNodes(editor, { token: undefined }, { at: propertyNodePath });
+  const [, valueNodePath] = Editor.node(editor, Path.next(propertyNodePath));
   Transforms.setNodes(
     editor,
-    { property: undefined },
-    { at: valueNodeEntry[1] }
+    { property: undefined, token: undefined },
+    { at: valueNodePath }
   );
 }
 
@@ -53,11 +38,7 @@ export function convertCssValueToEdit(
   valueNodeEntry: NodeEntry<Node>
 ) {
   const [valueNode, valueNodePath] = valueNodeEntry;
-  Transforms.setNodes(editor, { value: undefined });
-  Transforms.insertText(editor, valueNode.value as string);
-  Transforms.setSelection(editor, {
-    anchor: { path: valueNodePath, offset: 0 },
-  });
+  Transforms.setNodes(editor, { token: undefined }, { at: valueNodePath });
 }
 
 export function insertAtRule(editor: Editor, insertPath: Path) {

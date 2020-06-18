@@ -20,11 +20,7 @@ export function setValueNodeValue(
     valueNode !== undefined
       ? valueNode
       : Editor.node(editor, valueNodePath!)[0];
-  if (
-    element.value === undefined &&
-    typeof element.property === "string" &&
-    Array.isArray(element.children)
-  ) {
+  if (typeof element.property === "string" && Array.isArray(element.children)) {
     const childText = element.children[0].text;
     if (typeof childText === "string" && typeof element.property === "string") {
       const enumValues = getValidPropertyValues(element.property);
@@ -37,8 +33,7 @@ export function setValueNodeValue(
           });
           nodePath = valueNodeEntry[1];
         }
-        Transforms.delete(editor, { at: [...nodePath, 0] });
-        Transforms.setNodes(editor, { value: childText }, { at: nodePath });
+        Transforms.setNodes(editor, { token: true }, { at: nodePath });
       }
     }
   }

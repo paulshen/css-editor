@@ -3,8 +3,6 @@ import { Editor, Element, Path, Transforms } from "slate";
 import { useSlate } from "slate-react";
 import { getValidPropertyValues } from "./CSSData";
 import {
-  convertCssPropertyToEdit,
-  convertCssValueToEdit,
   insertDeclaration,
   insertRule,
   rotateEnumValue,
@@ -25,25 +23,6 @@ type ActionSection = {
 function Actions({ editor }: { editor: Editor }) {
   const sections: Array<ActionSection> = [];
 
-  const cssProperty = nodeAtOrAbove(editor, ["css-property"]);
-  if (cssProperty !== undefined) {
-    const [cssPropertyNode, cssPropertyPath] = cssProperty;
-    if (cssPropertyNode.value !== undefined) {
-      sections.push({
-        title: "Property",
-        buttons: [
-          {
-            label: "Edit",
-            onClick: (e) => {
-              convertCssPropertyToEdit(editor, cssProperty);
-              e.preventDefault();
-            },
-          },
-        ],
-      });
-    }
-  }
-
   const cssValue = nodeAtOrAbove(editor, ["css-value"]);
   if (cssValue !== undefined) {
     const [cssValueNode] = cssValue;
@@ -60,36 +39,26 @@ function Actions({ editor }: { editor: Editor }) {
         enumValues !== undefined &&
         enumValues.indexOf(cssValueNode.value) !== -1
       ) {
-        enumButtons = [
-          {
-            label: "Rotate Value Up",
-            onClick: (e) => {
-              rotateEnumValue(editor, cssValue, false);
-              e.preventDefault();
+        sections.push({
+          title: "Value",
+          buttons: [
+            {
+              label: "Rotate Value Up",
+              onClick: (e) => {
+                rotateEnumValue(editor, cssValue, false);
+                e.preventDefault();
+              },
             },
-          },
-          {
-            label: "Rotate Value Down",
-            onClick: (e) => {
-              rotateEnumValue(editor, cssValue, true);
-              e.preventDefault();
+            {
+              label: "Rotate Value Down",
+              onClick: (e) => {
+                rotateEnumValue(editor, cssValue, true);
+                e.preventDefault();
+              },
             },
-          },
-        ];
+          ],
+        });
       }
-      sections.push({
-        title: "Value",
-        buttons: [
-          {
-            label: "Edit",
-            onClick: (e) => {
-              convertCssValueToEdit(editor, cssValue);
-              e.preventDefault();
-            },
-          },
-          ...enumButtons,
-        ],
-      });
     }
   }
 

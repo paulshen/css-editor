@@ -208,8 +208,7 @@ export default function App() {
                       children: [
                         {
                           type: "css-property",
-                          value: "border",
-                          children: [{ text: "" }],
+                          children: [{ text: "border" }],
                         },
                         {
                           type: "css-value",
@@ -222,8 +221,7 @@ export default function App() {
                       children: [
                         {
                           type: "css-property",
-                          value: "color",
-                          children: [{ text: "" }],
+                          children: [{ text: "color" }],
                         },
                         {
                           type: "css-value",
@@ -254,8 +252,7 @@ export default function App() {
               children: [
                 {
                   type: "css-property",
-                  value: "border",
-                  children: [{ text: "" }],
+                  children: [{ text: "border" }],
                 },
                 {
                   type: "css-value",

@@ -23,8 +23,6 @@ import { getValidPropertyValues } from "./CSSData";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
 import {
-  convertCssPropertyToEdit,
-  convertCssValueToEdit,
   insertAtRule,
   insertDeclaration,
   insertRule,
@@ -98,7 +96,7 @@ function renderElement(props: RenderElementProps) {
 
 function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
   if (e.key === "Tab") {
-    if (editor.suggestionsHandleKeyTab !== undefined) {
+    if (!e.shiftKey && editor.suggestionsHandleKeyTab !== undefined) {
       // @ts-ignore
       editor.suggestionsHandleKeyTab(e);
       return;
@@ -126,6 +124,9 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
               unit: "block",
             });
           }
+        }
+        if (nextPoint !== undefined) {
+          nextPoint = Editor.end(editor, nextPoint.path);
         }
       }
       if (nextPoint !== undefined) {
@@ -297,27 +298,6 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       }
       e.preventDefault();
     }
-  } else if (e.key === "c") {
-    {
-      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
-      if (aboveMatch !== undefined) {
-        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-        if (typeof aboveMatchNode.value === "string") {
-          convertCssPropertyToEdit(editor, aboveMatch);
-          e.preventDefault();
-        }
-      }
-    }
-    {
-      const aboveMatch = nodeAtOrAbove(editor, ["css-value"]);
-      if (aboveMatch !== undefined) {
-        const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
-        if (typeof aboveMatchNode.value === "string") {
-          convertCssValueToEdit(editor, aboveMatch);
-          e.preventDefault();
-        }
-      }
-    }
   } else if (e.key === "Backspace") {
     if (e.shiftKey) {
       if (e.ctrlKey) {
@@ -415,12 +395,6 @@ function SlateEditor({
       normalizeNode,
     } = editor;
     editor.isVoid = (element) => {
-      if (element.type === "css-property" && element.value !== undefined) {
-        return true;
-      }
-      if (element.type === "css-value" && element.value !== undefined) {
-        return true;
-      }
       return isVoid(element);
     };
     editor.isInline = (element) => {
