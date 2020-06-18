@@ -12,28 +12,34 @@ import {
 import styles from "./SlateEditorPanel.module.css";
 import { nodeAtOrAbove } from "./Utils";
 
+type ActionSection = {
+  title: string;
+  buttons: Array<{
+    label: string;
+    onClick: (e: React.MouseEvent) => void;
+    disabled?: boolean;
+  }>;
+};
+
 function Actions({ editor }: { editor: Editor }) {
-  const buttons = [];
+  const sections: Array<ActionSection> = [];
 
   const cssProperty = nodeAtOrAbove(editor, ["css-property"]);
   if (cssProperty !== undefined) {
     const [cssPropertyNode, cssPropertyPath] = cssProperty;
     if (cssPropertyNode.value !== undefined) {
-      buttons.push(
-        <div>
-          <div>Property</div>
-          <div>
-            <button
-              onMouseDown={(e) => {
-                convertCssPropertyToEdit(editor, cssProperty);
-                e.preventDefault();
-              }}
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-      );
+      sections.push({
+        title: "Property",
+        buttons: [
+          {
+            label: "Edit",
+            onClick: (e) => {
+              convertCssPropertyToEdit(editor, cssProperty);
+              e.preventDefault();
+            },
+          },
+        ],
+      });
     }
   }
 
@@ -44,55 +50,45 @@ function Actions({ editor }: { editor: Editor }) {
       typeof cssValueNode.property === "string" &&
       typeof cssValueNode.value === "string"
     ) {
-      let enumButtons = null;
+      let enumButtons: Array<{
+        label: string;
+        onClick: (e: React.MouseEvent) => void;
+      }> = [];
       const enumValues = ENUM_PROPERTIES[cssValueNode.property];
       if (
         enumValues !== undefined &&
         enumValues.indexOf(cssValueNode.value) !== -1
       ) {
-        enumButtons = (
-          <>
-            <div>
-              <div>
-                <button
-                  onMouseDown={(e) => {
-                    rotateEnumValue(editor, cssValue, false);
-                    e.preventDefault();
-                  }}
-                >
-                  Rotate Value Up
-                </button>
-              </div>
-              <div>
-                <button
-                  onMouseDown={(e) => {
-                    rotateEnumValue(editor, cssValue, true);
-                    e.preventDefault();
-                  }}
-                >
-                  Rotate Value Down
-                </button>
-              </div>
-            </div>
-          </>
-        );
+        enumButtons = [
+          {
+            label: "Rotate Value Up",
+            onClick: (e) => {
+              rotateEnumValue(editor, cssValue, false);
+              e.preventDefault();
+            },
+          },
+          {
+            label: "Rotate Value Down",
+            onClick: (e) => {
+              rotateEnumValue(editor, cssValue, true);
+              e.preventDefault();
+            },
+          },
+        ];
       }
-      buttons.push(
-        <div>
-          <div>Value</div>
-          <div>
-            <button
-              onMouseDown={(e) => {
-                convertCssValueToEdit(editor, cssValue);
-                e.preventDefault();
-              }}
-            >
-              Edit
-            </button>
-          </div>
-          {enumButtons}
-        </div>
-      );
+      sections.push({
+        title: "Value",
+        buttons: [
+          {
+            label: "Edit",
+            onClick: (e) => {
+              convertCssValueToEdit(editor, cssValue);
+              e.preventDefault();
+            },
+          },
+          ...enumButtons,
+        ],
+      });
     }
   }
 
@@ -106,49 +102,40 @@ function Actions({ editor }: { editor: Editor }) {
     insertDeclarationPath = Path.next(cssDeclarationPath);
     const [parentNode] = Editor.parent(editor, cssDeclarationPath);
     const childIndex = cssDeclarationPath[cssDeclarationPath.length - 1];
-    buttons.push(
-      <div>
-        <div>Declaration</div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.delete(editor, { at: cssDeclarationPath });
-              e.preventDefault();
-            }}
-          >
-            Delete Declaration
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssDeclarationPath,
-                to: Path.previous(cssDeclarationPath),
-              });
-              e.preventDefault();
-            }}
-            disabled={cssDeclarationPath[cssDeclarationPath.length - 1] === 0}
-          >
-            Move Declaration Up
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssDeclarationPath,
-                to: Path.next(cssDeclarationPath),
-              });
-              e.preventDefault();
-            }}
-            disabled={childIndex === parentNode.children.length - 1}
-          >
-            Move Declaration Down
-          </button>
-        </div>
-      </div>
-    );
+    sections.push({
+      title: "Declaration",
+      buttons: [
+        {
+          label: "Delete Declaration",
+          onClick: (e) => {
+            Transforms.delete(editor, { at: cssDeclarationPath });
+            e.preventDefault();
+          },
+        },
+        {
+          label: "Move Declaration Up",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssDeclarationPath,
+              to: Path.previous(cssDeclarationPath),
+            });
+            e.preventDefault();
+          },
+          disabled: cssDeclarationPath[cssDeclarationPath.length - 1] === 0,
+        },
+        {
+          label: "Move Declaration Down",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssDeclarationPath,
+              to: Path.next(cssDeclarationPath),
+            });
+            e.preventDefault();
+          },
+          disabled: childIndex === parentNode.children.length - 1,
+        },
+      ],
+    });
   }
 
   if (cssRule !== undefined) {
@@ -160,59 +147,47 @@ function Actions({ editor }: { editor: Editor }) {
     }
     const insertDeclarationPath_ = insertDeclarationPath;
 
-    buttons.push(
-      <div>
-        <div>Rule</div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              insertDeclaration(editor, insertDeclarationPath_);
-              e.preventDefault();
-            }}
-          >
-            Insert Declaration
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.delete(editor, { at: cssRulePath });
-              e.preventDefault();
-            }}
-          >
-            Delete Rule
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssRulePath,
-                to: Path.previous(cssRulePath),
-              });
-              e.preventDefault();
-            }}
-            disabled={cssRulePath[cssRulePath.length - 1] === 0}
-          >
-            Move Block Up
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssRulePath,
-                to: Path.next(cssRulePath),
-              });
-              e.preventDefault();
-            }}
-            disabled={childIndex === parentNode.children.length - 1}
-          >
-            Move Block Down
-          </button>
-        </div>
-      </div>
-    );
+    sections.push({
+      title: "Rule",
+      buttons: [
+        {
+          label: "Insert Declaration",
+          onClick: (e) => {
+            insertDeclaration(editor, insertDeclarationPath_);
+            e.preventDefault();
+          },
+        },
+        {
+          label: "Delete Rule",
+          onClick: (e) => {
+            Transforms.delete(editor, { at: cssRulePath });
+            e.preventDefault();
+          },
+        },
+        {
+          label: "Move Block Up",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssRulePath,
+              to: Path.previous(cssRulePath),
+            });
+            e.preventDefault();
+          },
+          disabled: cssRulePath[cssRulePath.length - 1] === 0,
+        },
+        {
+          label: "Move Block Down",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssRulePath,
+              to: Path.next(cssRulePath),
+            });
+            e.preventDefault();
+          },
+          disabled: childIndex === parentNode.children.length - 1,
+        },
+      ],
+    });
   }
 
   if (cssAtRule !== undefined) {
@@ -220,49 +195,40 @@ function Actions({ editor }: { editor: Editor }) {
     const [parentNode] = Editor.parent(editor, cssAtRulePath);
     const childIndex = cssAtRulePath[cssAtRulePath.length - 1];
 
-    buttons.push(
-      <div>
-        <div>At Rule</div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.delete(editor, { at: cssAtRulePath });
-              e.preventDefault();
-            }}
-          >
-            Delete At Rule
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssAtRulePath,
-                to: Path.previous(cssAtRulePath),
-              });
-              e.preventDefault();
-            }}
-            disabled={cssAtRulePath[cssAtRulePath.length - 1] === 0}
-          >
-            Move At Rule Up
-          </button>
-        </div>
-        <div>
-          <button
-            onMouseDown={(e) => {
-              Transforms.moveNodes(editor, {
-                at: cssAtRulePath,
-                to: Path.next(cssAtRulePath),
-              });
-              e.preventDefault();
-            }}
-            disabled={childIndex === parentNode.children.length - 1}
-          >
-            Move At Rule Down
-          </button>
-        </div>
-      </div>
-    );
+    sections.push({
+      title: "At Rule",
+      buttons: [
+        {
+          label: "Delete At Rule",
+          onClick: (e) => {
+            Transforms.delete(editor, { at: cssAtRulePath });
+            e.preventDefault();
+          },
+        },
+        {
+          label: "Move At Rule Up",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssAtRulePath,
+              to: Path.previous(cssAtRulePath),
+            });
+            e.preventDefault();
+          },
+          disabled: cssAtRulePath[cssAtRulePath.length - 1] === 0,
+        },
+        {
+          label: "Move At Rule Down",
+          onClick: (e) => {
+            Transforms.moveNodes(editor, {
+              at: cssAtRulePath,
+              to: Path.next(cssAtRulePath),
+            });
+            e.preventDefault();
+          },
+          disabled: childIndex === parentNode.children.length - 1,
+        },
+      ],
+    });
   }
 
   {
@@ -271,27 +237,31 @@ function Actions({ editor }: { editor: Editor }) {
       const [, cssRulePath] = cssRule;
       insertRulePath = Path.next(cssRulePath);
     }
-    buttons.push(
-      <div>
-        <button
-          onMouseDown={(e) => {
+    sections.push({
+      title: "",
+      buttons: [
+        {
+          label: "Insert Rule",
+          onClick: (e) => {
             insertRule(editor, insertRulePath);
             e.preventDefault();
-          }}
-        >
-          Insert Rule
-        </button>
-      </div>
-    );
+          },
+        },
+      ],
+    });
   }
 
   const aboveBlock = nodeAtOrAbove(editor, ["css-block", "css-atrule-block"]);
   if (aboveBlock !== undefined) {
     const [aboveBlockNode, aboveBlockPath] = aboveBlock;
-    buttons.push(
-      <div>
-        <button
-          onMouseDown={(e) => {
+    sections.push({
+      title: "",
+      buttons: [
+        {
+          label: `Go to block ${
+            aboveBlockNode.type === "css-block" ? "selector" : "prelude"
+          }`,
+          onClick: (e) => {
             const selectorEdges = Editor.edges(
               editor,
               Path.previous(aboveBlockPath)
@@ -301,16 +271,28 @@ function Actions({ editor }: { editor: Editor }) {
               focus: selectorEdges[1],
             });
             e.preventDefault();
-          }}
-        >
-          Go to block{" "}
-          {aboveBlockNode.type === "css-block" ? "selector" : "prelude"}
-        </button>
-      </div>
-    );
+          },
+        },
+      ],
+    });
   }
 
-  return <div>{buttons}</div>;
+  return (
+    <div>
+      {sections.map(({ title, buttons }, i) => (
+        <div className={styles.actionSection} key={i}>
+          <div>{title}</div>
+          {buttons.map(({ label, onClick, disabled }, j) => (
+            <div key={j}>
+              <button onMouseDown={onClick} disabled={disabled}>
+                {label}
+              </button>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function SlateEditorPanel() {
