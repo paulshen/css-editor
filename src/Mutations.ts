@@ -127,3 +127,13 @@ export function rotateEnumValue(
     { at: valuePath }
   );
 }
+
+export function unwrapAtRule(editor: Editor, atRulePath: Path) {
+  Transforms.unwrapNodes(editor, {
+    at: [...atRulePath, 1],
+  });
+  Transforms.delete(editor, { at: [...atRulePath, 0] });
+  Transforms.unwrapNodes(editor, {
+    at: atRulePath,
+  });
+}

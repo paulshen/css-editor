@@ -8,6 +8,7 @@ import {
   insertDeclaration,
   insertRule,
   rotateEnumValue,
+  unwrapAtRule,
 } from "./Mutations";
 import styles from "./SlateEditorPanel.module.css";
 import { nodeAtOrAbove } from "./Utils";
@@ -202,6 +203,13 @@ function Actions({ editor }: { editor: Editor }) {
           label: "Delete At Rule",
           onClick: (e) => {
             Transforms.delete(editor, { at: cssAtRulePath });
+            e.preventDefault();
+          },
+        },
+        {
+          label: "Unwrap At Rule",
+          onClick: (e) => {
+            unwrapAtRule(editor, cssAtRulePath);
             e.preventDefault();
           },
         },

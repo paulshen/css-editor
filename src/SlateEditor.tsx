@@ -29,6 +29,7 @@ import {
   insertDeclaration,
   insertRule,
   rotateEnumValue,
+  unwrapAtRule,
 } from "./Mutations";
 import SlateEditorPanel from "./SlateEditorPanel";
 import { nodeAtOrAbove } from "./Utils";
@@ -314,17 +315,28 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     }
   } else if (e.key === "Backspace") {
     if (e.shiftKey) {
-      const atRulePrelude = nodeAtOrAbove(editor, ["css-atrule-prelude"]);
-      if (atRulePrelude !== undefined) {
-        const [, atRulePreludePath] = atRulePrelude;
-        Transforms.unwrapNodes(editor, {
-          at: Path.next(atRulePreludePath),
-        });
-        Transforms.delete(editor, { at: atRulePreludePath });
-        Transforms.unwrapNodes(editor, {
-          at: Path.parent(atRulePreludePath),
-        });
+      if (e.ctrlKey) {
+        const atRule = nodeAtOrAbove(editor, ["css-atrule"]);
+        if (atRule !== undefined) {
+          const [, atRulePath] = atRule;
+          unwrapAtRule(editor, atRulePath);
+          e.preventDefault();
+          return;
+        }
+      }
+      const declaration = nodeAtOrAbove(editor, ["css-declaration"]);
+      if (declaration !== undefined) {
+        const [, declarationPath] = declaration;
+        Transforms.delete(editor, { at: declarationPath });
         e.preventDefault();
+        return;
+      }
+      const rule = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
+      if (rule !== undefined) {
+        const [, rulePath] = rule;
+        Transforms.delete(editor, { at: rulePath });
+        e.preventDefault();
+        return;
       }
     }
   } else if (e.key === "Escape") {
