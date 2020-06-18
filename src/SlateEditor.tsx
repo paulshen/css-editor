@@ -448,7 +448,6 @@ function SlateEditor({
         insertDeclaration(editor, newDeclarationPath);
         return;
       }
-      insertBreak();
     };
     editor.deleteFragment = () => {
       const [selectionNodeEntry] = Editor.levels(editor, { reverse: true });
@@ -628,6 +627,33 @@ function SlateEditor({
                 children: [
                   { type: "css-property", children: [{ text: "" }] },
                   { type: "css-value", children: [{ text: "" }] },
+                ],
+              },
+              { at: [...path, 0] }
+            );
+            return;
+          }
+        }
+        if (node.type === "css-atrule-block") {
+          if (node.children.length === 0) {
+            Transforms.insertNodes(
+              editor,
+              {
+                type: "css-rule",
+                children: [
+                  { type: "css-selector", children: [{ text: "" }] },
+                  {
+                    type: "css-block",
+                    children: [
+                      {
+                        type: "css-declaration",
+                        children: [
+                          { type: "css-property", children: [{ text: "" }] },
+                          { type: "css-value", children: [{ text: "" }] },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
               { at: [...path, 0] }
