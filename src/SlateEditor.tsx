@@ -97,6 +97,11 @@ function renderElement(props: RenderElementProps) {
 
 function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
   if (e.key === "Tab") {
+    if (editor.suggestionsHandleKeyTab !== undefined) {
+      // @ts-ignore
+      editor.suggestionsHandleKeyTab(e);
+      return;
+    }
     if (editor.selection !== null) {
       let nextPoint;
       if (e.shiftKey) {
@@ -503,6 +508,21 @@ function SlateEditor({
                     { value: undefined },
                     { at: cssPropertyNodePath }
                   );
+                  const [cssValueNode, cssValueNodePath] = Editor.node(
+                    editor,
+                    Path.next(cssPropertyNodePath)
+                  );
+                  const cssValue = cssValueNode.value as string | undefined;
+                  Transforms.setNodes(
+                    editor,
+                    { property: undefined, value: undefined },
+                    { at: cssValueNodePath }
+                  );
+                  if (cssValue !== undefined) {
+                    Transforms.insertText(editor, cssValue, {
+                      at: [...cssValueNodePath, 0],
+                    });
+                  }
                   return;
                 }
               }

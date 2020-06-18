@@ -1,22 +1,35 @@
 import * as React from "react";
-import { Editor, Transforms } from "slate";
-import { RenderElementProps, useEditor, useSelected } from "slate-react";
+import { Editor, Range, Transforms } from "slate";
+import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
 import { ENUM_PROPERTIES } from "./Constants";
 import { setValueNodeValue } from "./Utils";
 
 export default function CSSValueElement(props: RenderElementProps) {
-  const editor = useEditor();
-  const selected = useSelected();
   const { attributes, children, element } = props;
+  const editor = useSlate();
+  const selected = useSelected();
+  let focused = false;
+  if (
+    element.value === undefined &&
+    editor.selection !== null &&
+    Range.isCollapsed(editor.selection)
+  ) {
+    const aboveValue = Editor.above(editor, {
+      match: (node) => node.type === "css-value",
+    });
+    if (aboveValue !== undefined) {
+      focused = aboveValue[0] === element;
+    }
+  }
   React.useEffect(() => {
-    if (!selected) {
+    if (!focused) {
       setValueNodeValue(editor, element);
     }
-  }, [selected]);
+  }, [focused]);
   const childText = element.children[0].text as string;
   const suggestions = React.useMemo(() => {
-    if (!selected) {
+    if (!focused) {
       return undefined;
     }
     if (element.value !== undefined) {
@@ -30,7 +43,7 @@ export default function CSSValueElement(props: RenderElementProps) {
       return undefined;
     }
     return enumValues.filter((option) => option.startsWith(childText));
-  }, [selected, element.property, element.value, childText]);
+  }, [focused, element.property, element.value, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
@@ -55,17 +68,24 @@ export default function CSSValueElement(props: RenderElementProps) {
         });
         e.preventDefault();
       };
-      editor.suggestionsHandleKeyArrow = (e: KeyboardEvent) => {
-        const key = e.key;
-        setSelectedSuggestionIndex(
-          (index) =>
-            (index + (key === "ArrowUp" ? -1 : 1) + suggestions.length) %
-            suggestions.length
-        );
-        e.preventDefault();
+      editor.suggestionsHandleKeyTab = (e: KeyboardEvent) => {
+        // @ts-ignore
+        editor.suggestionsHandleKeyEnter(e);
       };
+      if (suggestions.length > 1) {
+        editor.suggestionsHandleKeyArrow = (e: KeyboardEvent) => {
+          const key = e.key;
+          setSelectedSuggestionIndex(
+            (index) =>
+              (index + (key === "ArrowUp" ? -1 : 1) + suggestions.length) %
+              suggestions.length
+          );
+          e.preventDefault();
+        };
+      }
       return () => {
         editor.suggestionsHandleKeyEnter = undefined;
+        editor.suggestionsHandleKeyTab = undefined;
         editor.suggestionsHandleKeyArrow = undefined;
       };
     }

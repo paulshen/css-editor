@@ -1,17 +1,30 @@
 import * as React from "react";
-import { Editor, Path, Transforms } from "slate";
-import { RenderElementProps, useEditor, useSelected } from "slate-react";
+import { Editor, Path, Range, Transforms } from "slate";
+import { RenderElementProps, useSelected, useSlate } from "slate-react";
 import styles from "./App.module.css";
 import { ENUM_PROPERTIES } from "./Constants";
 import { setValueNodeValue } from "./Utils";
 
 export function CSSPropertyElement(props: RenderElementProps) {
-  const editor = useEditor();
-  const selected = useSelected();
   const { attributes, children, element } = props;
+  const editor = useSlate();
+  const selected = useSelected();
+  let focused = false;
+  if (
+    element.value === undefined &&
+    editor.selection !== null &&
+    Range.isCollapsed(editor.selection)
+  ) {
+    const aboveProperty = Editor.above(editor, {
+      match: (node) => node.type === "css-property",
+    });
+    if (aboveProperty !== undefined) {
+      focused = aboveProperty[0] === element;
+    }
+  }
   const childText = element.children[0].text as string;
   const suggestions = React.useMemo(() => {
-    if (!selected) {
+    if (!focused) {
       return undefined;
     }
     if (element.value !== undefined) {
@@ -20,7 +33,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
     return Object.keys(ENUM_PROPERTIES).filter((option) =>
       option.startsWith(childText)
     );
-  }, [selected, element.value, childText]);
+  }, [focused, element.value, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
@@ -48,23 +61,30 @@ export function CSSPropertyElement(props: RenderElementProps) {
         });
         e.preventDefault();
       };
-      editor.suggestionsHandleKeyArrow = (e: KeyboardEvent) => {
-        const key = e.key;
-        setSelectedSuggestionIndex(
-          (index) =>
-            (index + (key === "ArrowUp" ? -1 : 1) + suggestions.length) %
-            suggestions.length
-        );
-        e.preventDefault();
+      editor.suggestionsHandleKeyTab = (e: KeyboardEvent) => {
+        // @ts-ignore
+        editor.suggestionsHandleKeyEnter(e);
       };
+      if (suggestions.length > 1) {
+        editor.suggestionsHandleKeyArrow = (e: KeyboardEvent) => {
+          const key = e.key;
+          setSelectedSuggestionIndex(
+            (index) =>
+              (index + (key === "ArrowUp" ? -1 : 1) + suggestions.length) %
+              suggestions.length
+          );
+          e.preventDefault();
+        };
+      }
       return () => {
         editor.suggestionsHandleKeyEnter = undefined;
+        editor.suggestionsHandleKeyTab = undefined;
         editor.suggestionsHandleKeyArrow = undefined;
       };
     }
   }, [suggestions]);
   React.useEffect(() => {
-    if (!selected && element.value === undefined) {
+    if (!focused && element.value === undefined) {
       const childText = element.children[0].text;
       if (
         typeof childText === "string" &&
@@ -86,7 +106,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
         setValueNodeValue(editor, undefined, valueNodePath);
       }
     }
-  }, [selected]);
+  }, [focused]);
   return (
     <span {...attributes} className={styles.cssProperty}>
       {typeof element.value === "string" ? (
