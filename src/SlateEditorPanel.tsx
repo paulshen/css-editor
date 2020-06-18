@@ -73,7 +73,7 @@ function Actions({ editor }: { editor: Editor }) {
     const [parentNode] = Editor.parent(editor, cssDeclarationPath);
     const childIndex = cssDeclarationPath[cssDeclarationPath.length - 1];
     sections.push({
-      title: "Declaration",
+      title: `Declaration ${Editor.string(editor, [...cssDeclarationPath, 0])}`,
       buttons: [
         {
           label: "Delete Declaration",
@@ -118,7 +118,7 @@ function Actions({ editor }: { editor: Editor }) {
     const insertDeclarationPath_ = insertDeclarationPath;
 
     sections.push({
-      title: "Rule",
+      title: `Rule ${Editor.string(editor, [...cssRulePath, 0])}`,
       buttons: [
         {
           label: "Insert Declaration",
@@ -166,7 +166,7 @@ function Actions({ editor }: { editor: Editor }) {
     const childIndex = cssAtRulePath[cssAtRulePath.length - 1];
 
     sections.push({
-      title: "At Rule",
+      title: `At Rule ${Editor.string(editor, [...cssAtRulePath, 0])}`,
       buttons: [
         {
           label: "Delete At Rule",
