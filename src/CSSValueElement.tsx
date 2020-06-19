@@ -1,10 +1,33 @@
 import * as React from "react";
-import { Editor, Range, Transforms } from "slate";
-import { RenderElementProps, useSelected, useSlate } from "slate-react";
+import { Editor, Element, Range, Transforms } from "slate";
+import {
+  ReactEditor,
+  RenderElementProps,
+  useSelected,
+  useSlate,
+} from "slate-react";
 import styles from "./App.module.css";
 import { getValidPropertyValues } from "./CSSData";
 import { convertCssValueToEdit } from "./Mutations";
 import { setValueNodeValue } from "./Utils";
+
+function selectSuggestion(
+  editor: ReactEditor,
+  element: Element,
+  value: string
+) {
+  const [nodeEntry] = Editor.nodes(editor, {
+    match: (node) => node === element,
+  });
+  const [_, nodePath] = nodeEntry;
+  Transforms.delete(editor, { at: [...nodePath, 0] });
+  Transforms.insertText(editor, value, { at: [...nodePath, 0] });
+  Transforms.setNodes(editor, { token: true }, { at: nodePath });
+  Transforms.setSelection(editor, {
+    anchor: { path: nodePath, offset: value.length },
+    focus: { path: nodePath, offset: value.length },
+  });
+}
 
 export default function CSSValueElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
@@ -62,20 +85,7 @@ export default function CSSValueElement(props: RenderElementProps) {
     if (suggestions !== undefined && suggestions.length > 0) {
       editor.suggestionsHandleKeyEnter = (e: KeyboardEvent) => {
         const value = suggestions[selectedSuggestionIndexRef.current];
-        if (value === undefined) {
-          return;
-        }
-        const [nodeEntry] = Editor.nodes(editor, {
-          match: (node) => node === element,
-        });
-        const [_, nodePath] = nodeEntry;
-        Transforms.delete(editor, { at: [...nodePath, 0] });
-        Transforms.insertText(editor, value, { at: [...nodePath, 0] });
-        Transforms.setNodes(editor, { token: true }, { at: nodePath });
-        Transforms.setSelection(editor, {
-          anchor: { path: nodePath, offset: value.length },
-          focus: { path: nodePath, offset: value.length },
-        });
+        selectSuggestion(editor, element, value);
         e.preventDefault();
       };
       editor.suggestionsHandleKeyTab = (e: KeyboardEvent) => {
@@ -133,6 +143,9 @@ export default function CSSValueElement(props: RenderElementProps) {
         <div className={styles.suggestions} contentEditable={false}>
           {suggestions!.map((suggestion, i) => (
             <div
+              onMouseDown={(e) => {
+                selectSuggestion(editor, element, suggestion);
+              }}
               className={
                 styles.suggestionListItem +
                 (selectedSuggestionIndex === i

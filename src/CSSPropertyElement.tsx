@@ -1,10 +1,36 @@
 import * as React from "react";
-import { Editor, Path, Range, Transforms } from "slate";
-import { RenderElementProps, useSelected, useSlate } from "slate-react";
+import { Editor, Path, Range, Transforms, Element } from "slate";
+import {
+  RenderElementProps,
+  useSelected,
+  useSlate,
+  ReactEditor,
+} from "slate-react";
 import styles from "./App.module.css";
 import { completePropertyName, isValidProperty } from "./CSSData";
 import { convertCssPropertyToEdit } from "./Mutations";
 import { setValueNodeValue } from "./Utils";
+
+function selectSuggestion(
+  editor: ReactEditor,
+  element: Element,
+  value: string
+) {
+  const [nodeEntry] = Editor.nodes(editor, {
+    match: (node) => node === element,
+  });
+  const [_, nodePath] = nodeEntry;
+  Transforms.delete(editor, { at: [...nodePath, 0] });
+  Transforms.insertText(editor, value, { at: [...nodePath, 0] });
+  Transforms.setNodes(editor, { token: true }, { at: nodePath });
+  const valueNodePath = Path.next(nodePath);
+  Transforms.setNodes(editor, { property: value }, { at: valueNodePath });
+  const valueNodePoint = { path: valueNodePath, offset: 0 };
+  Transforms.setSelection(editor, {
+    anchor: valueNodePoint,
+    focus: valueNodePoint,
+  });
+}
 
 export function CSSPropertyElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
@@ -51,20 +77,7 @@ export function CSSPropertyElement(props: RenderElementProps) {
     if (suggestions !== undefined && suggestions.length > 0) {
       editor.suggestionsHandleKeyEnter = (e: KeyboardEvent) => {
         const value = suggestions[selectedSuggestionIndexRef.current];
-        const [nodeEntry] = Editor.nodes(editor, {
-          match: (node) => node === element,
-        });
-        const [_, nodePath] = nodeEntry;
-        Transforms.delete(editor, { at: [...nodePath, 0] });
-        Transforms.insertText(editor, value, { at: [...nodePath, 0] });
-        Transforms.setNodes(editor, { token: true }, { at: nodePath });
-        const valueNodePath = Path.next(nodePath);
-        Transforms.setNodes(editor, { property: value }, { at: valueNodePath });
-        const valueNodePoint = { path: valueNodePath, offset: 0 };
-        Transforms.setSelection(editor, {
-          anchor: valueNodePoint,
-          focus: valueNodePoint,
-        });
+        selectSuggestion(editor, element, value);
         e.preventDefault();
       };
       editor.suggestionsHandleKeyTab = (e: KeyboardEvent) => {
@@ -137,6 +150,9 @@ export function CSSPropertyElement(props: RenderElementProps) {
         <div className={styles.suggestions} contentEditable={false}>
           {suggestions!.map((suggestion, i) => (
             <div
+              onMouseDown={(e) => {
+                selectSuggestion(editor, element, suggestion);
+              }}
               className={
                 styles.suggestionListItem +
                 (selectedSuggestionIndex === i
