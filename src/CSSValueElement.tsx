@@ -19,6 +19,10 @@ export default function CSSValueElement(props: RenderElementProps) {
       focused = aboveValue[0] === element;
     }
   }
+  const [hideSuggestions, setHideSuggestions] = React.useState(false);
+  if (!focused && hideSuggestions) {
+    setHideSuggestions(false);
+  }
   React.useEffect(() => {
     if (!focused) {
       setValueNodeValue(editor, element);
@@ -26,7 +30,7 @@ export default function CSSValueElement(props: RenderElementProps) {
   }, [focused]);
   const childText = element.children[0].text as string;
   const suggestions = React.useMemo(() => {
-    if (!focused) {
+    if (!focused || hideSuggestions) {
       return undefined;
     }
     if (element.token === true) {
@@ -42,11 +46,14 @@ export default function CSSValueElement(props: RenderElementProps) {
     return enumValues
       .filter((option) => option.startsWith(childText))
       .slice(0, 8);
-  }, [focused, element.property, element.token, childText]);
+  }, [focused, hideSuggestions, element.property, element.token, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
   );
+  if (!hasSuggestions && selectedSuggestionIndex !== 0) {
+    setSelectedSuggestionIndex(0);
+  }
   const selectedSuggestionIndexRef = React.useRef(selectedSuggestionIndex);
   React.useEffect(() => {
     selectedSuggestionIndexRef.current = selectedSuggestionIndex;
@@ -55,6 +62,9 @@ export default function CSSValueElement(props: RenderElementProps) {
     if (suggestions !== undefined && suggestions.length > 0) {
       editor.suggestionsHandleKeyEnter = (e: KeyboardEvent) => {
         const value = suggestions[selectedSuggestionIndexRef.current];
+        if (value === undefined) {
+          return;
+        }
         const [nodeEntry] = Editor.nodes(editor, {
           match: (node) => node === element,
         });
@@ -83,10 +93,15 @@ export default function CSSValueElement(props: RenderElementProps) {
           e.preventDefault();
         };
       }
+      editor.suggestionsHandleKeyEscape = (e: KeyboardEvent) => {
+        setHideSuggestions(true);
+        e.preventDefault();
+      };
       return () => {
         editor.suggestionsHandleKeyEnter = undefined;
         editor.suggestionsHandleKeyTab = undefined;
         editor.suggestionsHandleKeyArrow = undefined;
+        editor.suggestionsHandleKeyEscape = undefined;
       };
     }
   }, [suggestions]);

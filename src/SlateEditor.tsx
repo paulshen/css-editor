@@ -297,6 +297,11 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       }
     }
   } else if (e.key === "Escape") {
+    if (editor.suggestionsHandleKeyEscape !== undefined) {
+      // @ts-ignore
+      editor.suggestionsHandleKeyEscape(e);
+      return;
+    }
     const aboveBlock = nodeAtOrAbove(editor, ["css-block", "css-atrule-block"]);
     if (aboveBlock !== undefined) {
       const [, aboveBlockPath] = aboveBlock;

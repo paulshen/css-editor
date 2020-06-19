@@ -19,9 +19,13 @@ export function CSSPropertyElement(props: RenderElementProps) {
       focused = aboveProperty[0] === element;
     }
   }
+  const [hideSuggestions, setHideSuggestions] = React.useState(false);
+  if (!focused && hideSuggestions) {
+    setHideSuggestions(false);
+  }
   const childText = element.children[0].text as string;
   const suggestions = React.useMemo(() => {
-    if (!focused) {
+    if (!focused || hideSuggestions) {
       return undefined;
     }
     if (element.token === true) {
@@ -31,11 +35,14 @@ export function CSSPropertyElement(props: RenderElementProps) {
       return undefined;
     }
     return completePropertyName(childText).slice(0, 8);
-  }, [focused, element.token, childText]);
+  }, [focused, hideSuggestions, element.token, childText]);
   const hasSuggestions = suggestions !== undefined && suggestions.length > 0;
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = React.useState(
     0
   );
+  if (!hasSuggestions && selectedSuggestionIndex !== 0) {
+    setSelectedSuggestionIndex(0);
+  }
   const selectedSuggestionIndexRef = React.useRef(selectedSuggestionIndex);
   React.useEffect(() => {
     selectedSuggestionIndexRef.current = selectedSuggestionIndex;
@@ -75,10 +82,15 @@ export function CSSPropertyElement(props: RenderElementProps) {
           e.preventDefault();
         };
       }
+      editor.suggestionsHandleKeyEscape = (e: KeyboardEvent) => {
+        setHideSuggestions(true);
+        e.preventDefault();
+      };
       return () => {
         editor.suggestionsHandleKeyEnter = undefined;
         editor.suggestionsHandleKeyTab = undefined;
         editor.suggestionsHandleKeyArrow = undefined;
+        editor.suggestionsHandleKeyEscape = undefined;
       };
     }
   }, [suggestions]);
