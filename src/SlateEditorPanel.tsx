@@ -16,6 +16,7 @@ type ActionSection = {
   buttons: Array<{
     label: string;
     onClick: (e: React.MouseEvent) => void;
+    keyboardShortcut?: string | undefined;
     disabled?: boolean;
   }>;
 };
@@ -28,17 +29,11 @@ function Actions({ editor }: { editor: Editor }) {
     const [cssValueNode] = cssValue;
     if (
       typeof cssValueNode.property === "string" &&
-      typeof cssValueNode.value === "string"
+      cssValueNode.token === true
     ) {
-      let enumButtons: Array<{
-        label: string;
-        onClick: (e: React.MouseEvent) => void;
-      }> = [];
-      const enumValues = getValidPropertyValues(cssValueNode.value);
-      if (
-        enumValues !== undefined &&
-        enumValues.indexOf(cssValueNode.value) !== -1
-      ) {
+      const value = cssValueNode.children[0].text as string;
+      const enumValues = getValidPropertyValues(cssValueNode.property);
+      if (enumValues !== undefined && enumValues.indexOf(value) !== -1) {
         sections.push({
           title: "Value",
           buttons: [
@@ -48,6 +43,7 @@ function Actions({ editor }: { editor: Editor }) {
                 rotateEnumValue(editor, cssValue, false);
                 e.preventDefault();
               },
+              keyboardShortcut: "⌥ + ↑",
             },
             {
               label: "Rotate Value Down",
@@ -55,6 +51,7 @@ function Actions({ editor }: { editor: Editor }) {
                 rotateEnumValue(editor, cssValue, true);
                 e.preventDefault();
               },
+              keyboardShortcut: "⌥ + ↓",
             },
           ],
         });
@@ -81,6 +78,7 @@ function Actions({ editor }: { editor: Editor }) {
             Transforms.delete(editor, { at: cssDeclarationPath });
             e.preventDefault();
           },
+          keyboardShortcut: "⇧ + ⌫",
         },
         {
           label: "Move Declaration Up",
@@ -92,6 +90,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: cssDeclarationPath[cssDeclarationPath.length - 1] === 0,
+          keyboardShortcut: "⌥ + ⇧ + ↑",
         },
         {
           label: "Move Declaration Down",
@@ -103,6 +102,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: childIndex === parentNode.children.length - 1,
+          keyboardShortcut: "⌥ + ⇧ + ↓",
         },
       ],
     });
@@ -126,6 +126,7 @@ function Actions({ editor }: { editor: Editor }) {
             insertDeclaration(editor, insertDeclarationPath_);
             e.preventDefault();
           },
+          keyboardShortcut: "⏎",
         },
         {
           label: "Delete Rule",
@@ -133,9 +134,10 @@ function Actions({ editor }: { editor: Editor }) {
             Transforms.delete(editor, { at: cssRulePath });
             e.preventDefault();
           },
+          keyboardShortcut: cssDeclaration === undefined ? "⇧ + ⌫" : undefined,
         },
         {
-          label: "Move Block Up",
+          label: "Move Rule Up",
           onClick: (e) => {
             Transforms.moveNodes(editor, {
               at: cssRulePath,
@@ -144,9 +146,11 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: cssRulePath[cssRulePath.length - 1] === 0,
+          keyboardShortcut:
+            cssDeclaration === undefined ? "⌥ + ⇧ + ↑" : undefined,
         },
         {
-          label: "Move Block Down",
+          label: "Move Rule Down",
           onClick: (e) => {
             Transforms.moveNodes(editor, {
               at: cssRulePath,
@@ -155,6 +159,8 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: childIndex === parentNode.children.length - 1,
+          keyboardShortcut:
+            cssDeclaration === undefined ? "⌥ + ⇧ + ↓" : undefined,
         },
       ],
     });
@@ -174,6 +180,7 @@ function Actions({ editor }: { editor: Editor }) {
             Transforms.delete(editor, { at: cssAtRulePath });
             e.preventDefault();
           },
+          keyboardShortcut: cssRule === undefined ? "⇧ + ⌫" : undefined,
         },
         {
           label: "Unwrap At Rule",
@@ -223,6 +230,7 @@ function Actions({ editor }: { editor: Editor }) {
             insertRule(editor, insertRulePath);
             e.preventDefault();
           },
+          keyboardShortcut: "⇧ + ⏎",
         },
       ],
     });
@@ -249,6 +257,7 @@ function Actions({ editor }: { editor: Editor }) {
             });
             e.preventDefault();
           },
+          keyboardShortcut: "⎋",
         },
       ],
     });
@@ -256,18 +265,33 @@ function Actions({ editor }: { editor: Editor }) {
 
   return (
     <div>
-      {sections.map(({ title, buttons }, i) => (
-        <div className={styles.actionSection} key={i}>
-          <div>{title}</div>
-          {buttons.map(({ label, onClick, disabled }, j) => (
-            <div key={j}>
-              <button onMouseDown={onClick} disabled={disabled}>
-                {label}
-              </button>
-            </div>
+      <table className={styles.actionSectionTable}>
+        <tbody>
+          {sections.map(({ title, buttons }, i) => (
+            <React.Fragment key={i}>
+              <tr>
+                <th colSpan={2} className={styles.actionSectionTitle}>
+                  {title}
+                </th>
+              </tr>
+              {buttons.map(
+                ({ label, onClick, disabled, keyboardShortcut }, j) => (
+                  <tr key={j}>
+                    <td>
+                      <button onMouseDown={onClick} disabled={disabled}>
+                        {label}
+                      </button>
+                    </td>
+                    <td>
+                      {keyboardShortcut !== undefined ? keyboardShortcut : null}
+                    </td>
+                  </tr>
+                )
+              )}
+            </React.Fragment>
           ))}
-        </div>
-      ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -294,9 +318,9 @@ export default function SlateEditorPanel() {
     return (
       <div className={styles.panel}>
         <Actions editor={editor} />
-        <div>{levelNodes}</div>
+        {/* <div>{levelNodes}</div>
         <div>{JSON.stringify(node)}</div>
-        {JSON.stringify(nodePath)}
+        {JSON.stringify(nodePath)} */}
       </div>
     );
   }

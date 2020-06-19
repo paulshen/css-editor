@@ -5,6 +5,18 @@
   width: 50vw;
 }
 
-.actionSection {
-  margin-bottom: 16px;
+.actionSectionTable {
+  border-spacing: 0;
+}
+
+.actionSectionTable td {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.actionSectionTable td:first-child {
+  border-right: 1px solid #f0f0f0;
+}
+
+.actionSectionTitle {
+  text-align: left;
 }
