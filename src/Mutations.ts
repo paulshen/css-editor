@@ -53,15 +53,7 @@ export function insertAtRule(editor: Editor, insertPath: Path) {
         },
         {
           type: "css-atrule-block",
-          children: [
-            {
-              type: "css-rule",
-              children: [
-                { type: "css-selector", children: [{ text: "" }] },
-                { type: "css-block", children: [] },
-              ],
-            },
-          ],
+          children: [{ text: "" }],
         },
       ],
     },

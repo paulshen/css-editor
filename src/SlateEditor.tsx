@@ -408,7 +408,10 @@ function SlateEditor({
         const existingDeclarationNode = (parentNode as Element).children[
           newDeclarationPath[newDeclarationPath.length - 1]
         ];
-        if (existingDeclarationNode !== undefined) {
+        if (
+          existingDeclarationNode !== undefined &&
+          Element.isElement(existingDeclarationNode)
+        ) {
           if (
             // @ts-ignore
             existingDeclarationNode.children[0].children[0].text === "" &&
@@ -596,46 +599,60 @@ function SlateEditor({
           }
         }
         if (node.type === "css-block") {
-          if (node.children.length === 0) {
-            Transforms.insertNodes(
-              editor,
-              {
-                type: "css-declaration",
-                children: [
-                  { type: "css-property", children: [{ text: "" }] },
-                  { type: "css-value", children: [{ text: "" }] },
-                ],
-              },
-              { at: [...path, 0] }
-            );
-            return;
+          for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            if (!Element.isElement(child) && child.text !== "") {
+              Transforms.wrapNodes(
+                editor,
+                { type: "css-property", children: [] },
+                { at: [...path, i] }
+              );
+              Transforms.wrapNodes(
+                editor,
+                { type: "css-declaration", children: [] },
+                { at: [...path, i] }
+              );
+              Transforms.insertNodes(
+                editor,
+                { type: "css-value", children: [{ text: "" }] },
+                { at: [...path, i, 1] }
+              );
+              return;
+            }
           }
         }
         if (node.type === "css-atrule-block") {
-          if (node.children.length === 0) {
-            Transforms.insertNodes(
-              editor,
-              {
-                type: "css-rule",
-                children: [
-                  { type: "css-selector", children: [{ text: "" }] },
-                  {
-                    type: "css-block",
-                    children: [
-                      {
-                        type: "css-declaration",
-                        children: [
-                          { type: "css-property", children: [{ text: "" }] },
-                          { type: "css-value", children: [{ text: "" }] },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-              { at: [...path, 0] }
-            );
-            return;
+          for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            if (!Element.isElement(child) && child.text !== "") {
+              Transforms.wrapNodes(
+                editor,
+                { type: "css-selector", children: [] },
+                { at: [...path, i] }
+              );
+              Transforms.wrapNodes(
+                editor,
+                { type: "css-rule", children: [] },
+                { at: [...path, i] }
+              );
+              Transforms.insertNodes(
+                editor,
+                {
+                  type: "css-block",
+                  children: [
+                    {
+                      type: "css-declaration",
+                      children: [
+                        { type: "css-property", children: [{ text: "" }] },
+                        { type: "css-value", children: [{ text: "" }] },
+                      ],
+                    },
+                  ],
+                },
+                { at: [...path, i, 1] }
+              );
+              return;
+            }
           }
         }
       }

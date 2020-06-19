@@ -69,9 +69,11 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
     case "css-block":
       return {
         type: "Block",
-        children: node.children
-          .map(slateNodeToCssTreePlain)
-          .filter((node) => node !== undefined) as CssNodePlain[],
+        children: Element.isElement(node.children[0])
+          ? (node.children
+              .map(slateNodeToCssTreePlain)
+              .filter((node) => node !== undefined) as CssNodePlain[])
+          : [],
       };
     case "css-declaration":
       const propertyNode = node.children[0] as Element;
@@ -116,7 +118,9 @@ function convertCssNodeToSlateValue(node: CssNode): Node {
     case "Block":
       return {
         type: "css-block",
-        children: node.children.map(convertCssNodeToSlateValue).toArray(),
+        children: !node.children.isEmpty()
+          ? node.children.map(convertCssNodeToSlateValue).toArray()
+          : [{ text: "" }],
       };
     case "SelectorList":
       return {
