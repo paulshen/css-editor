@@ -242,34 +242,6 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         }
         e.preventDefault();
       }
-    } else {
-      const aboveMatch = nodeAtOrAbove(editor, ["css-property"]);
-      if (aboveMatch !== undefined) {
-        const match = nodeAtOrAbove(editor, ["css-declaration"]);
-        if (match !== undefined) {
-          const [matchNode, matchPath] = match;
-          let nextMatch;
-          if (e.key === "ArrowDown") {
-            nextMatch = Editor.next(editor, {
-              at: Editor.point(editor, matchPath, { edge: "end" }),
-            });
-          }
-          if (e.key === "ArrowUp") {
-            nextMatch = Editor.previous(editor, {
-              at: matchPath,
-              match: (node) => node.type === "css-property",
-            });
-          }
-          if (nextMatch !== undefined) {
-            const [_, nextPath] = nextMatch;
-            Transforms.setSelection(editor, {
-              anchor: { path: nextPath, offset: 0 },
-              focus: { path: nextPath, offset: 0 },
-            });
-            e.preventDefault();
-          }
-        }
-      }
     }
   } else if (e.key === "Enter") {
     if (editor.suggestionsHandleKeyEnter !== undefined) {
