@@ -23,3 +23,14 @@ export function getValidPropertyValues(
   }
   return (property.values as any).map((value: any) => value.name);
 }
+
+export function isValidPropertyValue(
+  propertyName: string,
+  propertyValue: string
+): boolean {
+  const values = getValidPropertyValues(propertyName);
+  if (values === undefined) {
+    return false;
+  }
+  return values.includes(propertyValue);
+}

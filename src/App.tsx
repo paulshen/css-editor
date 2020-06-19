@@ -13,6 +13,7 @@ import prettier from "prettier/standalone";
 import * as React from "react";
 import { Element, Node, Text } from "slate";
 import styles from "./App.module.css";
+import { isValidProperty, isValidPropertyValue } from "./CSSData";
 import SlateEditor from "./SlateEditor";
 
 function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
@@ -75,9 +76,7 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
     case "css-declaration":
       const propertyNode = node.children[0] as Element;
       const valueNode = node.children[1] as Element;
-      const propertyValue = (propertyNode.value !== undefined
-        ? propertyNode.value
-        : propertyNode.children[0].text) as string;
+      const propertyValue = propertyNode.children[0].text as string;
       if (propertyValue === "") {
         return undefined;
       }
@@ -87,9 +86,7 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
         property: propertyValue,
         value: {
           type: "Raw",
-          value: (valueNode.value !== undefined
-            ? valueNode.value
-            : valueNode.children[0].text) as string,
+          value: valueNode.children[0].text as string,
         },
       };
     default:
@@ -134,17 +131,24 @@ function convertCssNodeToSlateValue(node: CssNode): Node {
         ],
       };
     case "Declaration":
+      const propertyValid = isValidProperty(node.property);
+      const cssValue = generate(node.value);
       return {
         type: "css-declaration",
         children: [
           {
             type: "css-property",
-            value: node.property,
-            children: [{ text: "" }],
+            token: propertyValid ? true : undefined,
+            children: [{ text: node.property }],
           },
           {
             type: "css-value",
-            children: [{ text: generate(node.value) }],
+            property: propertyValid ? node.property : undefined,
+            token:
+              propertyValid && isValidPropertyValue(node.property, cssValue)
+                ? true
+                : undefined,
+            children: [{ text: cssValue }],
           },
         ],
       };
