@@ -401,6 +401,27 @@ function SlateEditor({
         }
       }
       if (newDeclarationPath !== undefined) {
+        const [parentNode] = Editor.node(
+          editor,
+          Path.parent(newDeclarationPath)
+        );
+        const existingDeclarationNode = (parentNode as Element).children[
+          newDeclarationPath[newDeclarationPath.length - 1]
+        ];
+        if (existingDeclarationNode !== undefined) {
+          if (
+            // @ts-ignore
+            existingDeclarationNode.children[0].children[0].text === "" &&
+            // @ts-ignore
+            existingDeclarationNode.children[1].children[0].text === ""
+          ) {
+            Transforms.setSelection(editor, {
+              anchor: { path: newDeclarationPath, offset: 0 },
+              focus: { path: newDeclarationPath, offset: 0 },
+            });
+            return;
+          }
+        }
         insertDeclaration(editor, newDeclarationPath);
         return;
       }
