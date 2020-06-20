@@ -194,21 +194,25 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         }
         return;
       }
-      const match = Editor.above(editor, {
+      const valueTokenEntry = Editor.above(editor, {
         match: (node: Node) => {
           if (
+            !Element.isElement(node) ||
             node.type !== "css-value" ||
             typeof node.property !== "string" ||
-            typeof node.value !== "string"
+            node.token !== true
           ) {
             return false;
           }
           const enumValues = getValidPropertyValues(node.property);
-          return enumValues !== undefined && enumValues.includes(node.value);
+          return (
+            enumValues !== undefined &&
+            enumValues.includes(node.children[0].text as string)
+          );
         },
       });
-      if (match !== undefined) {
-        rotateEnumValue(editor, match, e.key === "ArrowDown");
+      if (valueTokenEntry !== undefined) {
+        rotateEnumValue(editor, valueTokenEntry, e.key === "ArrowDown");
         e.preventDefault();
       } else if (editor.selection !== null) {
         let from: Path;

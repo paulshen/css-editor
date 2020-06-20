@@ -1,4 +1,4 @@
-import { Editor, Node, NodeEntry, Path, Transforms } from "slate";
+import { Editor, Element, Node, NodeEntry, Path, Transforms } from "slate";
 import { getValidPropertyValues } from "./CSSData";
 
 export function insertRule(editor: Editor, insertPath: Path) {
@@ -85,20 +85,25 @@ export function insertDeclaration(editor: Editor, newDeclarationPath: Path) {
 
 export function rotateEnumValue(
   editor: Editor,
-  valueNodeEntry: NodeEntry<Node>,
+  valueNodeEntry: NodeEntry<Element>,
   isDownDirection: boolean
 ) {
   const [valueNode, valuePath] = valueNodeEntry;
   const enumValues = getValidPropertyValues(valueNode.property as string)!;
-  const index = enumValues.indexOf(valueNode.value as string);
+  const index = enumValues.indexOf(valueNode.children[0].text as string);
   const nextIndex =
     (index + enumValues.length + (isDownDirection ? 1 : -1)) %
     enumValues.length;
-  Transforms.setNodes(
-    editor,
-    { value: enumValues[nextIndex] },
-    { at: valuePath }
-  );
+  Transforms.delete(editor, { at: [...valuePath, 0] });
+  console.log(enumValues, index, nextIndex);
+  const nextValue = enumValues[nextIndex];
+  Transforms.insertText(editor, nextValue, {
+    at: [...valuePath, 0],
+  });
+  Transforms.setSelection(editor, {
+    anchor: { path: valuePath, offset: nextValue.length },
+    focus: { path: valuePath, offset: nextValue.length },
+  });
 }
 
 export function unwrapAtRule(editor: Editor, atRulePath: Path) {
