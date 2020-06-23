@@ -6,11 +6,19 @@
 }
 
 .actionSectionTable {
+  border-collapse: collapse;
   border-spacing: 0;
+}
+
+.actionSectionTable th {
+  font-size: var(--font-size);
+  font-weight: 400;
+  padding: 0;
 }
 
 .actionSectionTable td {
   border-bottom: 1px solid #f0f0f0;
+  padding: 0;
 }
 
 .actionSectionTable td:first-child {

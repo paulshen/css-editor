@@ -1,10 +1,11 @@
+import classNames from "classnames";
 import * as React from "react";
-import { Editor, Path, Range, Transforms, Element } from "slate";
+import { Editor, Element, Path, Range, Transforms } from "slate";
 import {
+  ReactEditor,
   RenderElementProps,
   useSelected,
   useSlate,
-  ReactEditor,
 } from "slate-react";
 import styles from "./App.module.css";
 import { completePropertyName, isValidProperty } from "./CSSData";
@@ -37,13 +38,11 @@ export function CSSPropertyElement(props: RenderElementProps) {
   const editor = useSlate();
   const selected = useSelected();
   let focused = false;
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection !== null) {
     const aboveProperty = Editor.above(editor, {
-      match: (node) => node.type === "css-property",
+      match: (node) => node === element,
     });
-    if (aboveProperty !== undefined) {
-      focused = aboveProperty[0] === element;
-    }
+    focused = aboveProperty !== undefined;
   }
   const [hideSuggestions, setHideSuggestions] = React.useState(false);
   if (!focused && hideSuggestions) {
@@ -137,9 +136,11 @@ export function CSSPropertyElement(props: RenderElementProps) {
   return (
     <span {...attributes} className={styles.cssProperty}>
       <span
-        style={{
-          color: element.token === true ? "green" : undefined,
-        }}
+        className={classNames(
+          styles.cssPropertySpan,
+          focused ? styles.inputFocused : undefined,
+          element.token === true ? styles.token : undefined
+        )}
       >
         {children}
       </span>

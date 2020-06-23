@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import * as React from "react";
 import {
   createEditor,
@@ -16,6 +17,7 @@ import {
   Editable,
   RenderElementProps,
   Slate,
+  useSlate,
   withReact,
 } from "slate-react";
 import styles from "./App.module.css";
@@ -36,14 +38,30 @@ function CSSSelectorElement(
   props: RenderElementProps & { isAtRule?: boolean }
 ) {
   const { attributes, children, element, isAtRule } = props;
+  let focused = false;
+  const editor = useSlate();
+  if (editor.selection !== null) {
+    const aboveProperty = Editor.above(editor, {
+      match: (node) => node === element,
+    });
+    focused = aboveProperty !== undefined;
+  }
   return (
     <div
       {...attributes}
-      className={
-        styles.cssSelector + (isAtRule ? " " + styles.cssAtRulePrelude : "")
-      }
+      className={classNames(
+        styles.cssSelector,
+        isAtRule ? styles.cssAtRulePrelude : undefined
+      )}
     >
-      {children}
+      <span
+        className={classNames(
+          styles.cssSelectorSpan,
+          focused ? styles.inputFocused : undefined
+        )}
+      >
+        {children}
+      </span>
     </div>
   );
 }

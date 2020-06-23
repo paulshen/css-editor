@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import * as React from "react";
 import { Editor, Element, Range, Transforms } from "slate";
 import {
@@ -34,13 +35,11 @@ export default function CSSValueElement(props: RenderElementProps) {
   const editor = useSlate();
   const selected = useSelected();
   let focused = false;
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection !== null) {
     const aboveValue = Editor.above(editor, {
-      match: (node) => node.type === "css-value",
+      match: (node) => node === element,
     });
-    if (aboveValue !== undefined) {
-      focused = aboveValue[0] === element;
-    }
+    focused = aboveValue !== undefined;
   }
   const [hideSuggestions, setHideSuggestions] = React.useState(false);
   if (!focused && hideSuggestions) {
@@ -131,14 +130,15 @@ export default function CSSValueElement(props: RenderElementProps) {
     }
   }, [childText]);
   return (
-    <span {...attributes} className={styles.cssValue}>
-      <span
-        style={{
-          color: element.token === true ? "green" : undefined,
-        }}
-      >
-        {children}
-      </span>
+    <span
+      {...attributes}
+      className={classNames(
+        styles.cssValue,
+        focused ? styles.inputFocused : undefined,
+        element.token === true ? styles.token : undefined
+      )}
+    >
+      {children}
       {hasSuggestions ? (
         <div className={styles.suggestions} contentEditable={false}>
           {suggestions!.map((suggestion, i) => (

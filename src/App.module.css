@@ -1,4 +1,16 @@
+:root {
+  --faint-gray: #f8f8f8;
+  --token-color: #005cc5;
+  --meta-opacity: 0.3;
+  --font-size: 16px;
+}
+
 .app {
+  font-family: SF Mono;
+  font-size: var(--font-size);
+}
+
+.app button {
   font-family: SF Mono;
 }
 
@@ -22,17 +34,23 @@
 
 .cssSelector::after {
   content: " {";
-  opacity: 0.5;
+  opacity: var(--meta-opacity);
 }
 
 .cssAtRulePrelude::before {
   content: "@";
-  opacity: 0.5;
+  opacity: var(--meta-opacity);
+}
+
+.cssSelectorSpan {
+  background-color: var(--faint-gray);
+  display: inline-block;
+  min-width: 20px;
 }
 
 .cssBlock::after {
   content: "}";
-  opacity: 0.5;
+  opacity: var(--meta-opacity);
 }
 
 .blockDeclarations {
@@ -47,17 +65,37 @@
   display: none;
 }
 
+.cssPropertySpan {
+  background-color: var(--faint-gray);
+  display: inline-block;
+  min-width: 30px;
+}
+
+.inputFocused {
+  border: 1px solid #e0e0e0;
+  margin: -1px;
+  position: relative;
+  z-index: 1;
+}
+
 .colon {
-  opacity: 0.5;
+  opacity: var(--meta-opacity);
+}
+
+.token {
+  color: var(--token-color);
 }
 
 .cssDeclaration::after {
   content: ";";
-  opacity: 0.5;
+  opacity: var(--meta-opacity);
 }
 
 .cssValue {
   position: relative;
+  background-color: var(--faint-gray);
+  display: inline-block;
+  min-width: 30px;
 }
 
 .suggestions {
