@@ -5,6 +5,10 @@
   --font-size: 16px;
 }
 
+::selection {
+  background-color: #abd2fe;
+}
+
 .app {
   font-family: SF Mono;
   font-size: var(--font-size);
@@ -22,6 +26,10 @@
 
 .cssRule {
   margin-bottom: 16px;
+}
+
+.cssRuleSelected {
+  background-color: #abd2fe40;
 }
 
 .cssRule:last-child {
@@ -72,8 +80,10 @@
 }
 
 .inputFocused {
-  border: 1px solid #e0e0e0;
-  margin: -1px;
+  background-color: #abd2fe20 !important;
+  border: 1px solid #abd2fe80;
+  margin: -2px -3px;
+  padding: 1px 2px;
   position: relative;
   z-index: 1;
 }

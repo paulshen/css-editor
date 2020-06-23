@@ -17,18 +17,17 @@ import {
   Editable,
   RenderElementProps,
   Slate,
+  useSelected,
   useSlate,
   withReact,
 } from "slate-react";
 import styles from "./App.module.css";
-import { getValidPropertyValues } from "./CSSData";
 import { CSSPropertyElement } from "./CSSPropertyElement";
 import CSSValueElement from "./CSSValueElement";
 import {
   insertAtRule,
   insertDeclaration,
   insertRule,
-  rotateEnumValue,
   unwrapAtRule,
 } from "./Mutations";
 import SlateEditorPanel from "./SlateEditorPanel";
@@ -65,6 +64,36 @@ function CSSSelectorElement(
     </div>
   );
 }
+function CSSRuleElement(props: RenderElementProps) {
+  const { attributes, children, element } = props;
+  const editor = useSlate();
+  let selected = false;
+  if (editor.selection !== null) {
+    const [nodeEntry] = Editor.nodes(editor, {
+      match: (node) => node === element,
+    });
+    if (nodeEntry !== undefined) {
+      const aboveEntry =
+        editor.selection !== null
+          ? Editor.node(editor, editor.selection)
+          : undefined;
+      if (aboveEntry !== undefined) {
+        selected = Path.isCommon(aboveEntry[1], nodeEntry[1]);
+      }
+    }
+  }
+  return (
+    <div
+      {...attributes}
+      className={classNames(
+        styles.cssRule,
+        selected ? styles.cssRuleSelected : undefined
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 function CSSBlockElement(props: RenderElementProps) {
   const { attributes, children, element } = props;
   return (
@@ -96,11 +125,7 @@ function renderElement(props: RenderElementProps) {
     case "css-atrule-block":
       return <CSSBlockElement {...props} />;
     case "css-rule":
-      return (
-        <div {...attributes} className={styles.cssRule}>
-          {children}
-        </div>
-      );
+      return <CSSRuleElement {...props} />;
     case "css-atrule":
       return (
         <div {...attributes} className={styles.cssRule}>
