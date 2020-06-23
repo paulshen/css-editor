@@ -120,6 +120,39 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       return;
     }
     if (editor.selection !== null) {
+      if (e.altKey) {
+        let from: Path;
+        let span: Span;
+        if (e.shiftKey) {
+          from = Editor.first(editor, editor.selection)[1];
+          const [, to] = Editor.first(editor, []);
+          span = [from, to];
+        } else {
+          from = Editor.last(editor, editor.selection)[1];
+          const [, to] = Editor.last(editor, []);
+          span = [from, to];
+        }
+        const [first, second] = Editor.nodes(editor, {
+          at: span,
+          reverse: e.shiftKey,
+          match: (node) =>
+            node.type === "css-selector" || node.type === "css-atrule-prelude",
+        });
+        let match = first;
+        if (match !== undefined && Path.isCommon(match[1], from)) {
+          match = second;
+        }
+        if (match !== undefined) {
+          const [_, matchPath] = match;
+          const point = { path: matchPath, offset: 0 };
+          Transforms.setSelection(editor, {
+            anchor: point,
+            focus: point,
+          });
+        }
+        e.preventDefault();
+        return;
+      }
       let nextPoint;
       if (e.shiftKey) {
         nextPoint = Editor.before(editor, editor.selection, {
@@ -163,31 +196,6 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
     }
     if (e.altKey) {
       if (e.shiftKey) {
-        const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
-        if (cssDeclaration !== undefined) {
-          const [, cssDeclarationPath] = cssDeclaration;
-          if (e.key === "ArrowUp") {
-            if (cssDeclarationPath[cssDeclarationPath.length - 1] !== 0) {
-              Transforms.moveNodes(editor, {
-                at: cssDeclarationPath,
-                to: Path.previous(cssDeclarationPath),
-              });
-            }
-          } else {
-            const [parent] = Editor.parent(editor, cssDeclarationPath);
-            const childIndex =
-              cssDeclarationPath[cssDeclarationPath.length - 1];
-            if (parent.children.length - 1 > childIndex) {
-              Transforms.moveNodes(editor, {
-                at: cssDeclarationPath,
-                to: Path.next(cssDeclarationPath),
-              });
-            }
-          }
-          e.preventDefault();
-          return;
-        }
-
         const cssRule = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
         if (cssRule !== undefined) {
           const [, cssRulePath] = cssRule;
@@ -212,58 +220,52 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         }
         return;
       }
-      const valueTokenEntry = Editor.above(editor, {
-        match: (node: Node) => {
-          if (
-            !Element.isElement(node) ||
-            node.type !== "css-value" ||
-            typeof node.property !== "string" ||
-            node.token !== true
-          ) {
-            return false;
-          }
-          const enumValues = getValidPropertyValues(node.property);
-          return (
-            enumValues !== undefined &&
-            enumValues.includes(node.children[0].text as string)
-          );
-        },
-      });
-      if (valueTokenEntry !== undefined) {
-        rotateEnumValue(editor, valueTokenEntry, e.key === "ArrowDown");
-        e.preventDefault();
-      } else if (editor.selection !== null) {
-        let from: Path;
-        let span: Span;
+
+      const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
+      if (cssDeclaration !== undefined) {
+        const [, cssDeclarationPath] = cssDeclaration;
         if (e.key === "ArrowUp") {
-          from = Editor.first(editor, editor.selection)[1];
-          const [, to] = Editor.first(editor, []);
-          span = [from, to];
+          if (cssDeclarationPath[cssDeclarationPath.length - 1] !== 0) {
+            Transforms.moveNodes(editor, {
+              at: cssDeclarationPath,
+              to: Path.previous(cssDeclarationPath),
+            });
+          }
         } else {
-          from = Editor.last(editor, editor.selection)[1];
-          const [, to] = Editor.last(editor, []);
-          span = [from, to];
-        }
-        const [first, second] = Editor.nodes(editor, {
-          at: span,
-          reverse: e.key === "ArrowUp",
-          match: (node) =>
-            node.type === "css-selector" || node.type === "css-atrule-prelude",
-        });
-        let match = first;
-        if (match !== undefined && Path.isCommon(match[1], from)) {
-          match = second;
-        }
-        if (match !== undefined) {
-          const [_, matchPath] = match;
-          const point = { path: matchPath, offset: 0 };
-          Transforms.setSelection(editor, {
-            anchor: point,
-            focus: point,
-          });
+          const [parent] = Editor.parent(editor, cssDeclarationPath);
+          const childIndex = cssDeclarationPath[cssDeclarationPath.length - 1];
+          if (parent.children.length - 1 > childIndex) {
+            Transforms.moveNodes(editor, {
+              at: cssDeclarationPath,
+              to: Path.next(cssDeclarationPath),
+            });
+          }
         }
         e.preventDefault();
       }
+      return;
+
+      // const valueTokenEntry = Editor.above(editor, {
+      //   match: (node: Node) => {
+      //     if (
+      //       !Element.isElement(node) ||
+      //       node.type !== "css-value" ||
+      //       typeof node.property !== "string" ||
+      //       node.token !== true
+      //     ) {
+      //       return false;
+      //     }
+      //     const enumValues = getValidPropertyValues(node.property);
+      //     return (
+      //       enumValues !== undefined &&
+      //       enumValues.includes(node.children[0].text as string)
+      //     );
+      //   },
+      // });
+      // if (valueTokenEntry !== undefined) {
+      //   rotateEnumValue(editor, valueTokenEntry, e.key === "ArrowDown");
+      //   e.preventDefault();
+      // }
     }
   } else if (e.key === "Enter") {
     if (editor.suggestionsHandleKeyEnter !== undefined) {
@@ -324,16 +326,31 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       editor.suggestionsHandleKeyEscape(e);
       return;
     }
-    const aboveBlock = nodeAtOrAbove(editor, ["css-block", "css-atrule-block"]);
-    if (aboveBlock !== undefined) {
-      const [, aboveBlockPath] = aboveBlock;
-      const selectorEdges = Editor.edges(editor, Path.previous(aboveBlockPath));
-      Transforms.setSelection(editor, {
-        anchor: selectorEdges[0],
-        focus: selectorEdges[1],
-      });
+    if (editor.selection !== null) {
+      if (!Range.isCollapsed(editor.selection)) {
+        Transforms.setSelection(editor, {
+          focus: editor.selection.anchor,
+        });
+        e.preventDefault();
+        return;
+      }
+      const aboveBlock = nodeAtOrAbove(editor, [
+        "css-block",
+        "css-atrule-block",
+      ]);
+      if (aboveBlock !== undefined) {
+        const [, aboveBlockPath] = aboveBlock;
+        const selectorEdges = Editor.edges(
+          editor,
+          Path.previous(aboveBlockPath)
+        );
+        Transforms.setSelection(editor, {
+          anchor: selectorEdges[0],
+          focus: selectorEdges[1],
+        });
+      }
+      e.preventDefault();
     }
-    e.preventDefault();
   } else if (e.key === "a" && e.metaKey && editor.selection !== null) {
     const nodeTypes = [
       "css-property",

@@ -46,9 +46,11 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
     case "css-atrule-block": {
       return {
         type: "Block",
-        children: node.children
-          .map(slateNodeToCssTreePlain)
-          .filter((node) => node !== undefined) as CssNodePlain[],
+        children: Element.isElement(node.children[0])
+          ? (node.children
+              .map(slateNodeToCssTreePlain)
+              .filter((node) => node !== undefined) as CssNodePlain[])
+          : [],
       };
     }
     case "css-selector":
@@ -130,7 +132,7 @@ function convertCssNodeToSlateValue(node: CssNode): Node {
             text: node.children
               .map((node) => generate(node))
               .toArray()
-              .join(""),
+              .join(", "),
           },
         ],
       };

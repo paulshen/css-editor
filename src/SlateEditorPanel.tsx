@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Editor, Element, Path, Transforms } from "slate";
+import { Editor, Element, Path, Transforms, Range } from "slate";
 import { useSlate } from "slate-react";
 import { getValidPropertyValues } from "./CSSData";
 import {
@@ -90,7 +90,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: cssDeclarationPath[cssDeclarationPath.length - 1] === 0,
-          keyboardShortcut: "⌥ + ⇧ + ↑",
+          keyboardShortcut: "⌥ + ↑",
         },
         {
           label: "Move Declaration Down",
@@ -102,7 +102,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: childIndex === parentNode.children.length - 1,
-          keyboardShortcut: "⌥ + ⇧ + ↓",
+          keyboardShortcut: "⌥ + ↓",
         },
       ],
     });
@@ -146,8 +146,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: cssRulePath[cssRulePath.length - 1] === 0,
-          keyboardShortcut:
-            cssDeclaration === undefined ? "⌥ + ⇧ + ↑" : undefined,
+          keyboardShortcut: "⌥ + ⇧ + ↑",
         },
         {
           label: "Move Rule Down",
@@ -159,8 +158,7 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           disabled: childIndex === parentNode.children.length - 1,
-          keyboardShortcut:
-            cssDeclaration === undefined ? "⌥ + ⇧ + ↓" : undefined,
+          keyboardShortcut: "⌥ + ⇧ + ↓",
         },
       ],
     });
@@ -257,7 +255,10 @@ function Actions({ editor }: { editor: Editor }) {
             });
             e.preventDefault();
           },
-          keyboardShortcut: "⎋",
+          keyboardShortcut:
+            editor.selection !== null && Range.isCollapsed(editor.selection)
+              ? "⎋"
+              : undefined,
         },
       ],
     });
