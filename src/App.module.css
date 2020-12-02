@@ -1,6 +1,7 @@
 :root {
   --faint-gray: #f8f8f8;
-  --light-gray: #f0f0f0;
+  --light-gray: #e8e8e8;
+  --gray: #b0b0b0;
   --token-color: #005cc5;
   --meta-opacity: 0.3;
   --font-size: 16px;
@@ -33,7 +34,6 @@
   padding: 4px;
   margin: -4px;
   text-transform: uppercase;
-  cursor: pointer;
 }
 
 .toggleButton:hover {

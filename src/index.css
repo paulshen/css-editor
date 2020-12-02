@@ -7,3 +7,7 @@ button,
 textarea {
   font-family: "SF Mono", Monaco, Menlo, "Courier New", Courier, monospace;
 }
+
+button {
+  cursor: pointer;
+}

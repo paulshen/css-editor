@@ -13,7 +13,7 @@
 .actionSectionTable {
   border-collapse: collapse;
   border-spacing: 0;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   width: 100%;
 }
 
@@ -22,21 +22,19 @@
 }
 
 .actionSectionTable th {
-  color: var(--token-color);
   font-weight: 400;
   padding: 0 0 8px;
   font-size: var(--font-size-small);
-  text-transform: uppercase;
 }
 
 .actionSectionTable td {
-  border-bottom: 1px solid #f0f0f0;
+  border-top: 1px solid var(--light-gray);
   padding: 4px 8px;
+  font-size: 12px;
 }
 
 .actionSectionTable td:first-child {
-  border-right: 1px solid #f0f0f0;
-  padding-left: 0;
+  border-right: 1px solid var(--light-gray);
 }
 
 .actionSectionTable td:last-child {
@@ -46,6 +44,7 @@
 .actionSectionTable button {
   background-color: transparent;
   border: 0;
+  font-size: 12px;
   padding: 0;
 }
 
@@ -55,4 +54,10 @@
 
 .actionSectionTitle {
   text-align: left;
+}
+
+.actionSectionTitleLabel {
+  color: var(--gray);
+  display: inline-block;
+  margin-left: 8px;
 }

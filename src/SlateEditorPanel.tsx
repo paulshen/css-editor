@@ -12,6 +12,7 @@ import styles from "./SlateEditorPanel.module.css";
 import { nodeAtOrAbove } from "./Utils";
 
 type ActionSection = {
+  type?: "declaration" | "rule" | "at-rule";
   title: string;
   buttons: Array<{
     label: string;
@@ -35,7 +36,7 @@ function Actions({ editor }: { editor: Editor }) {
       const enumValues = getValidPropertyValues(cssValueNode.property);
       if (enumValues !== undefined && enumValues.indexOf(value) !== -1) {
         sections.push({
-          title: "Value",
+          title: "value",
           buttons: [
             {
               label: "Rotate Value Up",
@@ -70,7 +71,8 @@ function Actions({ editor }: { editor: Editor }) {
     const [parentNode] = Editor.parent(editor, cssDeclarationPath);
     const childIndex = cssDeclarationPath[cssDeclarationPath.length - 1];
     sections.push({
-      title: `Declaration ${Editor.string(editor, [...cssDeclarationPath, 0])}`,
+      type: "declaration",
+      title: Editor.string(editor, [...cssDeclarationPath, 0]),
       buttons: [
         {
           label: "Delete Declaration",
@@ -118,7 +120,8 @@ function Actions({ editor }: { editor: Editor }) {
     const insertDeclarationPath_ = insertDeclarationPath;
 
     sections.push({
-      title: `Rule ${Editor.string(editor, [...cssRulePath, 0])}`,
+      type: "rule",
+      title: Editor.string(editor, [...cssRulePath, 0]),
       buttons: [
         {
           label: "Insert Declaration",
@@ -170,7 +173,8 @@ function Actions({ editor }: { editor: Editor }) {
     const childIndex = cssAtRulePath[cssAtRulePath.length - 1];
 
     sections.push({
-      title: `At Rule ${Editor.string(editor, [...cssAtRulePath, 0])}`,
+      type: "at-rule",
+      title: Editor.string(editor, [...cssAtRulePath, 0]),
       buttons: [
         {
           label: "Delete At Rule",
@@ -266,12 +270,15 @@ function Actions({ editor }: { editor: Editor }) {
 
   return (
     <div>
-      {sections.map(({ title, buttons }, i) => (
+      {sections.map(({ type, title, buttons }, i) => (
         <table className={styles.actionSectionTable} key={i}>
           <tbody>
             <tr>
               <th colSpan={2} className={styles.actionSectionTitle}>
                 {title}
+                {type !== undefined ? (
+                  <span className={styles.actionSectionTitleLabel}>{type}</span>
+                ) : null}
               </th>
             </tr>
             {buttons.map(
