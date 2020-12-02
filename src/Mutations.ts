@@ -95,7 +95,6 @@ export function rotateEnumValue(
     (index + enumValues.length + (isDownDirection ? 1 : -1)) %
     enumValues.length;
   Transforms.delete(editor, { at: [...valuePath, 0] });
-  console.log(enumValues, index, nextIndex);
   const nextValue = enumValues[nextIndex];
   Transforms.insertText(editor, nextValue, {
     at: [...valuePath, 0],
