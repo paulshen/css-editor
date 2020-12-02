@@ -1,28 +1,56 @@
 .panel {
+  background-color: var(--faint-gray);
   position: fixed;
-  right: 0;
-  top: 0;
-  width: 50vw;
+  right: 16px;
+  top: 48px;
+  width: 384px;
+  padding: 16px;
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  box-sizing: border-box;
 }
 
 .actionSectionTable {
   border-collapse: collapse;
   border-spacing: 0;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.actionSectionTable:last-child {
+  margin-bottom: 0;
 }
 
 .actionSectionTable th {
-  font-size: var(--font-size);
+  color: var(--token-color);
   font-weight: 400;
-  padding: 0;
+  padding: 0 0 8px;
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
 }
 
 .actionSectionTable td {
   border-bottom: 1px solid #f0f0f0;
-  padding: 0;
+  padding: 4px 8px;
 }
 
 .actionSectionTable td:first-child {
   border-right: 1px solid #f0f0f0;
+  padding-left: 0;
+}
+
+.actionSectionTable td:last-child {
+  width: 96px;
+}
+
+.actionSectionTable button {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.actionSectionTable button:hover {
+  text-decoration: underline;
 }
 
 .actionSectionTitle {

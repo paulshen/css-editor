@@ -266,33 +266,31 @@ function Actions({ editor }: { editor: Editor }) {
 
   return (
     <div>
-      <table className={styles.actionSectionTable}>
-        <tbody>
-          {sections.map(({ title, buttons }, i) => (
-            <React.Fragment key={i}>
-              <tr>
-                <th colSpan={2} className={styles.actionSectionTitle}>
-                  {title}
-                </th>
-              </tr>
-              {buttons.map(
-                ({ label, onClick, disabled, keyboardShortcut }, j) => (
-                  <tr key={j}>
-                    <td>
-                      <button onMouseDown={onClick} disabled={disabled}>
-                        {label}
-                      </button>
-                    </td>
-                    <td>
-                      {keyboardShortcut !== undefined ? keyboardShortcut : null}
-                    </td>
-                  </tr>
-                )
-              )}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
+      {sections.map(({ title, buttons }, i) => (
+        <table className={styles.actionSectionTable} key={i}>
+          <tbody>
+            <tr>
+              <th colSpan={2} className={styles.actionSectionTitle}>
+                {title}
+              </th>
+            </tr>
+            {buttons.map(
+              ({ label, onClick, disabled, keyboardShortcut }, j) => (
+                <tr key={j}>
+                  <td>
+                    <button onMouseDown={onClick} disabled={disabled}>
+                      {label}
+                    </button>
+                  </td>
+                  <td>
+                    {keyboardShortcut !== undefined ? keyboardShortcut : null}
+                  </td>
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      ))}
     </div>
   );
 }

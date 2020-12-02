@@ -194,65 +194,11 @@ export default function App() {
   const [textValue, setTextValue] = React.useState("");
   const [slateValue, setSlateValue] = React.useState<Node[]>([
     {
-      type: "css-atrule",
-      children: [
-        {
-          type: "css-atrule-prelude",
-          children: [{ text: "media (min-width: 900px)" }],
-        },
-        {
-          type: "css-atrule-block",
-          children: [
-            {
-              type: "css-rule",
-              children: [
-                {
-                  type: "css-selector",
-                  children: [{ text: "#main" }],
-                },
-                {
-                  type: "css-block",
-                  children: [
-                    {
-                      type: "css-declaration",
-                      children: [
-                        {
-                          type: "css-property",
-                          children: [{ text: "border" }],
-                        },
-                        {
-                          type: "css-value",
-                          children: [{ text: "1px solid black" }],
-                        },
-                      ],
-                    },
-                    {
-                      type: "css-declaration",
-                      children: [
-                        {
-                          type: "css-property",
-                          children: [{ text: "color" }],
-                        },
-                        {
-                          type: "css-value",
-                          children: [{ text: "red" }],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    {
       type: "css-rule",
       children: [
         {
           type: "css-selector",
-          children: [{ text: ".foo" }],
+          children: [{ text: ".app" }],
         },
         {
           type: "css-block",
@@ -274,11 +220,65 @@ export default function App() {
         },
       ],
     },
+    {
+      type: "css-atrule",
+      children: [
+        {
+          type: "css-atrule-prelude",
+          children: [{ text: "media (min-width: 900px)" }],
+        },
+        {
+          type: "css-atrule-block",
+          children: [
+            {
+              type: "css-rule",
+              children: [
+                {
+                  type: "css-selector",
+                  children: [{ text: ".app" }],
+                },
+                {
+                  type: "css-block",
+                  children: [
+                    {
+                      type: "css-declaration",
+                      children: [
+                        {
+                          type: "css-property",
+                          children: [{ text: "display" }],
+                        },
+                        {
+                          type: "css-value",
+                          children: [{ text: "flex" }],
+                        },
+                      ],
+                    },
+                    {
+                      type: "css-declaration",
+                      children: [
+                        {
+                          type: "css-property",
+                          children: [{ text: "color" }],
+                        },
+                        {
+                          type: "css-value",
+                          children: [{ text: "lightcoral" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   ]);
 
   return (
-    <div>
-      <div>
+    <div className={styles.app}>
+      <div className={styles.headerRow}>
         <button
           onClick={() => {
             if (showSlate) {
@@ -299,8 +299,9 @@ export default function App() {
               setShowSlate(true);
             }
           }}
+          className={styles.toggleButton}
         >
-          Toggle
+          Switch to {showSlate ? "text" : "structure"}
         </button>
       </div>
       {showSlate ? (

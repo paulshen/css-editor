@@ -1,8 +1,10 @@
 :root {
   --faint-gray: #f8f8f8;
+  --light-gray: #f0f0f0;
   --token-color: #005cc5;
   --meta-opacity: 0.3;
   --font-size: 16px;
+  --font-size-small: 12px;
 }
 
 ::selection {
@@ -10,18 +12,46 @@
 }
 
 .app {
-  font-family: SF Mono;
-  font-size: var(--font-size);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.app button {
-  font-family: SF Mono;
+.headerRow {
+  background-color: var(--faint-gray);
+  border-bottom: 1px solid var(--light-gray);
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.toggleButton {
+  background-color: transparent;
+  border: 0;
+  font-size: 12px;
+  padding: 4px;
+  margin: -4px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.toggleButton:hover {
+  text-decoration: underline;
+}
+
+.editor {
+  font-size: var(--font-size);
+  padding: 16px;
 }
 
 .textarea {
-  font-family: SF Mono;
-  width: 80vw;
-  height: 80vh;
+  border: 0;
+  box-sizing: border-box;
+  flex-grow: 1;
+  font-size: var(--font-size);
+  padding: 16px;
+  width: 100%;
 }
 
 .cssRule {

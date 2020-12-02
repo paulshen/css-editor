@@ -17,7 +17,6 @@ import {
   Editable,
   RenderElementProps,
   Slate,
-  useSelected,
   useSlate,
   withReact,
 } from "slate-react";
@@ -726,7 +725,7 @@ function SlateEditor({
     return editor;
   }, []);
   return (
-    <div className={styles.app}>
+    <div className={styles.editor}>
       <Slate
         editor={editor}
         value={value}
