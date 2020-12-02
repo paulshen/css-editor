@@ -309,10 +309,18 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
         }
       } else {
         let insertPath = [0];
-        const aboveMatch = nodeAtOrAbove(editor, ["css-rule", "css-atrule"]);
+        const aboveMatch = nodeAtOrAbove(editor, [
+          "css-rule",
+          "css-atrule-block",
+          "css-atrule",
+        ]);
         if (aboveMatch !== undefined) {
-          const [, aboveMatchNodePath] = aboveMatch;
-          insertPath = Path.next(aboveMatchNodePath);
+          const [aboveMatchNode, aboveMatchNodePath] = aboveMatch;
+          if (aboveMatchNode.type === "css-atrule-block") {
+            insertPath = [...aboveMatchNodePath, 0];
+          } else {
+            insertPath = Path.next(aboveMatchNodePath);
+          }
         }
         insertRule(editor, insertPath);
       }
