@@ -291,12 +291,15 @@ export default function App() {
               setShowSlate(false);
             } else {
               const cssTree = parse(textValue);
-              setSlateValue(
-                (cssTree as StyleSheet).children
+              try {
+                const slateValue = (cssTree as StyleSheet).children
                   .map(convertCssNodeToSlateValue)
-                  .toArray()
-              );
-              setShowSlate(true);
+                  .toArray();
+                setSlateValue(slateValue);
+                setShowSlate(true);
+              } catch (e) {
+                alert(`Got following error parsing CSS text\n${e.toString()}`);
+              }
             }
           }}
           className={styles.toggleButton}
