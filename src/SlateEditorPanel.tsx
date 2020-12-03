@@ -25,40 +25,40 @@ type ActionSection = {
 function Actions({ editor }: { editor: Editor }) {
   const sections: Array<ActionSection> = [];
 
-  const cssValue = nodeAtOrAbove(editor, ["css-value"]);
-  if (cssValue !== undefined) {
-    const [cssValueNode] = cssValue;
-    if (
-      typeof cssValueNode.property === "string" &&
-      cssValueNode.token === true
-    ) {
-      const value = cssValueNode.children[0].text as string;
-      const enumValues = getValidPropertyValues(cssValueNode.property);
-      if (enumValues !== undefined && enumValues.indexOf(value) !== -1) {
-        sections.push({
-          title: "value",
-          buttons: [
-            {
-              label: "Rotate Value Up",
-              onClick: (e) => {
-                rotateEnumValue(editor, cssValue, false);
-                e.preventDefault();
-              },
-              keyboardShortcut: "⌥ + ↑",
-            },
-            {
-              label: "Rotate Value Down",
-              onClick: (e) => {
-                rotateEnumValue(editor, cssValue, true);
-                e.preventDefault();
-              },
-              keyboardShortcut: "⌥ + ↓",
-            },
-          ],
-        });
-      }
-    }
-  }
+  // const cssValue = nodeAtOrAbove(editor, ["css-value"]);
+  // if (cssValue !== undefined) {
+  //   const [cssValueNode] = cssValue;
+  //   if (
+  //     typeof cssValueNode.property === "string" &&
+  //     cssValueNode.token === true
+  //   ) {
+  //     const value = cssValueNode.children[0].text as string;
+  //     const enumValues = getValidPropertyValues(cssValueNode.property);
+  //     if (enumValues !== undefined && enumValues.indexOf(value) !== -1) {
+  //       sections.push({
+  //         title: "value",
+  //         buttons: [
+  //           {
+  //             label: "Rotate Value Up",
+  //             onClick: (e) => {
+  //               rotateEnumValue(editor, cssValue, false);
+  //               e.preventDefault();
+  //             },
+  //             keyboardShortcut: "⌥ + ↑",
+  //           },
+  //           {
+  //             label: "Rotate Value Down",
+  //             onClick: (e) => {
+  //               rotateEnumValue(editor, cssValue, true);
+  //               e.preventDefault();
+  //             },
+  //             keyboardShortcut: "⌥ + ↓",
+  //           },
+  //         ],
+  //       });
+  //     }
+  //   }
+  // }
 
   let insertDeclarationPath: Path | undefined;
   const cssDeclaration = nodeAtOrAbove(editor, ["css-declaration"]);
