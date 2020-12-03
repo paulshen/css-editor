@@ -773,6 +773,7 @@ function SlateEditor({
           onKeyDown={(e) => {
             handleKeyDown(editor, e);
           }}
+          spellCheck={false}
         />
         <SlateEditorPanel />
       </Slate>
