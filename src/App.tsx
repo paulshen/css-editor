@@ -31,11 +31,12 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
       const atRulePrelude = node.children[0] as Element;
       const atRuleBlock = node.children[1];
       const atRulePreludeSplit = (atRulePrelude.children[0].text as string)
+        .trim()
         .split(" ")
         .filter((s) => s.trim() !== "");
       return {
         type: "Atrule",
-        name: atRulePreludeSplit[0],
+        name: atRulePreludeSplit[0] ?? "media",
         prelude: {
           type: "Raw",
           value: atRulePreludeSplit.slice(1).join(" "),
@@ -54,6 +55,7 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
       };
     }
     case "css-selector":
+      const text = (node.children[0] as Text).text;
       return {
         type: "SelectorList",
         children: [
@@ -62,7 +64,7 @@ function slateNodeToCssTreePlain(node: Node): CssNodePlain | undefined {
             children: [
               {
                 type: "Raw",
-                value: (node.children[0] as Text).text,
+                value: text.trim() !== "" ? text : "#selector",
               },
             ],
           },
