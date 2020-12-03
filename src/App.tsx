@@ -225,7 +225,7 @@ export default function App() {
       children: [
         {
           type: "css-atrule-prelude",
-          children: [{ text: "media (min-width: 900px)" }],
+          children: [{ text: "media (min-width: 640px)" }],
         },
         {
           type: "css-atrule-block",
@@ -235,7 +235,7 @@ export default function App() {
               children: [
                 {
                   type: "css-selector",
-                  children: [{ text: ".app" }],
+                  children: [{ text: ".container" }],
                 },
                 {
                   type: "css-block",
