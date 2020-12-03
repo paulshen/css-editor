@@ -1,18 +1,17 @@
 import * as React from "react";
-import { Editor, Element, Path, Transforms, Range } from "slate";
+import { Editor, Element, Path, Range, Transforms } from "slate";
 import { useSlate } from "slate-react";
-import { getValidPropertyValues } from "./CSSData";
 import {
+  insertAtRule,
   insertDeclaration,
   insertRule,
-  rotateEnumValue,
   unwrapAtRule,
 } from "./Mutations";
 import styles from "./SlateEditorPanel.module.css";
 import { nodeAtOrAbove } from "./Utils";
 
 type ActionSection = {
-  type?: "declaration" | "rule" | "at-rule";
+  type?: "declaration" | "rule" | "@-rule";
   title: string;
   buttons: Array<{
     label: string;
@@ -173,7 +172,7 @@ function Actions({ editor }: { editor: Editor }) {
     const childIndex = cssAtRulePath[cssAtRulePath.length - 1];
 
     sections.push({
-      type: "at-rule",
+      type: "@-rule",
       title: Editor.string(editor, [...cssAtRulePath, 0]),
       buttons: [
         {
@@ -223,6 +222,14 @@ function Actions({ editor }: { editor: Editor }) {
       const [, cssRulePath] = cssRule;
       insertRulePath = Path.next(cssRulePath);
     }
+    let insertAtRulePath = [0];
+    if (cssRule !== undefined) {
+      const [, cssRulePath] = cssRule;
+      insertAtRulePath = Path.next(cssRulePath);
+    } else if (cssAtRule !== undefined) {
+      const [, cssAtRulePath] = cssAtRule;
+      insertAtRulePath = Path.next(cssAtRulePath);
+    }
     sections.push({
       title: "",
       buttons: [
@@ -233,6 +240,14 @@ function Actions({ editor }: { editor: Editor }) {
             e.preventDefault();
           },
           keyboardShortcut: "⇧ + ⏎",
+        },
+        {
+          label: "Insert @-Rule",
+          onClick: (e) => {
+            insertAtRule(editor, insertAtRulePath);
+            e.preventDefault();
+          },
+          keyboardShortcut: "⌃ + ⇧ + ⏎",
         },
       ],
     });
