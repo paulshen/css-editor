@@ -420,6 +420,17 @@ function handleKeyDown(editor: Editor, e: React.KeyboardEvent) {
       focus: edges[1],
     });
     e.preventDefault();
+  } else if (e.key === ":") {
+    const propertyMatch = nodeAtOrAbove(editor, ["css-property"]);
+    if (propertyMatch !== undefined) {
+      const [, propertyPath] = propertyMatch;
+      const point = { path: Path.next(propertyPath), offset: 0 };
+      Transforms.setSelection(editor, {
+        anchor: point,
+        focus: point,
+      });
+      e.preventDefault();
+    }
   }
 }
 
