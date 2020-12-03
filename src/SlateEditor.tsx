@@ -460,12 +460,27 @@ function SlateEditor({
       return isInline(element);
     };
     editor.insertBreak = () => {
-      const [selectionNodeEntry] = Editor.levels(editor, { reverse: true });
+      const [
+        selectionNodeEntry,
+        selectionParentNodeEntry,
+      ] = Editor.levels(editor, { reverse: true });
       const [selectionNode, selectionNodePath] = selectionNodeEntry;
       if (selectionNode.type === "css-rule") {
         const newRulePath = Path.next(selectionNodePath);
         insertRule(editor, newRulePath);
         return;
+      }
+
+      if (selectionParentNodeEntry !== undefined) {
+        const [
+          selectionParentNode,
+          selectionParentNodePath,
+        ] = selectionParentNodeEntry;
+        if (selectionParentNode.type === "css-atrule-prelude") {
+          const newRulePath = [...Path.next(selectionParentNodePath), 0];
+          insertRule(editor, newRulePath);
+          return;
+        }
       }
 
       let newDeclarationPath;
