@@ -1,13 +1,39 @@
 .panel {
   background-color: var(--faint-gray);
+  border: 1px solid var(--light-gray);
+  box-sizing: border-box;
   position: fixed;
   right: 16px;
   top: 48px;
-  width: 384px;
+  width: 320px;
+  max-width: 100vw;
   padding: 16px;
   max-height: calc(100vh - 64px);
   overflow: auto;
   box-sizing: border-box;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .panel {
+    right: 0;
+    transform: translate3d(280px, 0, 0);
+    transition: transform 0.3s;
+  }
+
+  .panelMobileShow {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .panelMobileOverlay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffffb0;
+    z-index: 1;
+  }
 }
 
 .actionSectionTable {
@@ -38,7 +64,7 @@
 }
 
 .actionSectionTable td:last-child {
-  width: 96px;
+  width: 80px;
 }
 
 .actionSectionTable button {

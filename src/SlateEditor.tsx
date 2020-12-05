@@ -774,6 +774,8 @@ function SlateEditor({
             handleKeyDown(editor, e);
           }}
           spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="false"
         />
         <SlateEditorPanel />
       </Slate>

@@ -1,4 +1,6 @@
+import classNames from "classnames";
 import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import { Editor, Element, Path, Range, Transforms } from "slate";
 import { useSlate } from "slate-react";
 import {
@@ -21,7 +23,13 @@ type ActionSection = {
   }>;
 };
 
-function Actions({ editor }: { editor: Editor }) {
+function Actions({
+  editor,
+  onAction,
+}: {
+  editor: Editor;
+  onAction: () => void;
+}) {
   const sections: Array<ActionSection> = [];
 
   // const cssValue = nodeAtOrAbove(editor, ["css-value"]);
@@ -300,7 +308,13 @@ function Actions({ editor }: { editor: Editor }) {
               ({ label, onClick, disabled, keyboardShortcut }, j) => (
                 <tr key={j}>
                   <td>
-                    <button onMouseDown={onClick} disabled={disabled}>
+                    <button
+                      onClick={(e) => {
+                        onClick(e);
+                        onAction();
+                      }}
+                      disabled={disabled}
+                    >
                       {label}
                     </button>
                   </td>
@@ -319,6 +333,8 @@ function Actions({ editor }: { editor: Editor }) {
 
 export default function SlateEditorPanel() {
   const editor = useSlate();
+  const paneRootRef = useRef<HTMLDivElement>(null);
+  const [showMobilePane, setShowMobilePane] = useState(false);
   if (editor.selection !== null) {
     let [node, nodePath] = Editor.node(editor, editor.selection);
     if (nodePath.length === 0) {
@@ -337,12 +353,61 @@ export default function SlateEditorPanel() {
       );
     }
     return (
-      <div className={styles.panel}>
-        <Actions editor={editor} />
-        {/* <div>{levelNodes}</div>
+      <>
+        {showMobilePane ? (
+          <div
+            className={styles.panelMobileOverlay}
+            onMouseDown={() => {
+              const deselect = Transforms.deselect;
+              Transforms.deselect = () => {
+                Transforms.deselect = deselect;
+              };
+              setShowMobilePane(false);
+            }}
+            onTouchStart={() => {
+              const deselect = Transforms.deselect;
+              Transforms.deselect = () => {
+                Transforms.deselect = deselect;
+              };
+              setShowMobilePane(false);
+            }}
+          />
+        ) : null}
+        <div
+          className={classNames(styles.panel, {
+            [styles.panelMobileShow]: showMobilePane,
+          })}
+          onMouseDown={() => {
+            const deselect = Transforms.deselect;
+            Transforms.deselect = () => {
+              Transforms.deselect = deselect;
+            };
+            if (window.innerWidth <= 720) {
+              setShowMobilePane(true);
+            }
+          }}
+          onTouchStart={() => {
+            const deselect = Transforms.deselect;
+            Transforms.deselect = () => {
+              Transforms.deselect = deselect;
+            };
+            if (window.innerWidth <= 720) {
+              setShowMobilePane(true);
+            }
+          }}
+          ref={paneRootRef}
+        >
+          <Actions
+            editor={editor}
+            onAction={() => {
+              setShowMobilePane(false);
+            }}
+          />
+          {/* <div>{levelNodes}</div>
         <div>{JSON.stringify(node)}</div>
         {JSON.stringify(nodePath)} */}
-      </div>
+        </div>
+      </>
     );
   }
   return null;
