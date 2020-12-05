@@ -36,6 +36,17 @@
   }
 }
 
+@media (max-width: 600px) {
+  .panel {
+    width: 280px;
+    transform: translate3d(224px, 0, 0);
+  }
+
+  .panelMobileShow {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .actionSectionTable {
   border-collapse: collapse;
   border-spacing: 0;
@@ -65,6 +76,16 @@
 
 .actionSectionTable td:last-child {
   width: 80px;
+}
+
+@media (max-width: 600px) {
+  .actionSectionTable td:first-child {
+    border-right: none;
+  }
+
+  .actionSectionTable td:last-child {
+    display: none;
+  }
 }
 
 .actionSectionTable button {

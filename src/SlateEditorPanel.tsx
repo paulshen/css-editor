@@ -23,13 +23,7 @@ type ActionSection = {
   }>;
 };
 
-function Actions({
-  editor,
-  onAction,
-}: {
-  editor: Editor;
-  onAction: () => void;
-}) {
+function Actions({ editor }: { editor: Editor }) {
   const sections: Array<ActionSection> = [];
 
   // const cssValue = nodeAtOrAbove(editor, ["css-value"]);
@@ -308,13 +302,7 @@ function Actions({
               ({ label, onClick, disabled, keyboardShortcut }, j) => (
                 <tr key={j}>
                   <td>
-                    <button
-                      onClick={(e) => {
-                        onClick(e);
-                        onAction();
-                      }}
-                      disabled={disabled}
-                    >
+                    <button onClick={onClick} disabled={disabled}>
                       {label}
                     </button>
                   </td>
@@ -397,12 +385,7 @@ export default function SlateEditorPanel() {
           }}
           ref={paneRootRef}
         >
-          <Actions
-            editor={editor}
-            onAction={() => {
-              setShowMobilePane(false);
-            }}
-          />
+          <Actions editor={editor} />
           {/* <div>{levelNodes}</div>
         <div>{JSON.stringify(node)}</div>
         {JSON.stringify(nodePath)} */}
