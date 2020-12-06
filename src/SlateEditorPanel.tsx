@@ -23,8 +23,24 @@ type ActionSection = {
   }>;
 };
 
-function Actions({ editor }: { editor: Editor }) {
+function Actions({
+  editor,
+  showMobilePane,
+}: {
+  editor: Editor;
+  showMobilePane: boolean;
+}) {
   const sections: Array<ActionSection> = [];
+
+  const [delayedShowMobilePane, setDelayedShowMobilePane] = useState(
+    showMobilePane
+  );
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDelayedShowMobilePane(showMobilePane);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [showMobilePane]);
 
   // const cssValue = nodeAtOrAbove(editor, ["css-value"]);
   // if (cssValue !== undefined) {
@@ -286,7 +302,11 @@ function Actions({ editor }: { editor: Editor }) {
   }
 
   return (
-    <div>
+    <div
+      className={classNames(styles.actions, {
+        [styles.actionsMobileShow]: delayedShowMobilePane,
+      })}
+    >
       {sections.map(({ type, title, buttons }, i) => (
         <table className={styles.actionSectionTable} key={i}>
           <tbody>
@@ -370,7 +390,7 @@ export default function SlateEditorPanel() {
             Transforms.deselect = () => {
               Transforms.deselect = deselect;
             };
-            if (window.innerWidth <= 720) {
+            if (window.innerWidth <= 640) {
               setShowMobilePane(true);
             }
           }}
@@ -379,13 +399,15 @@ export default function SlateEditorPanel() {
             Transforms.deselect = () => {
               Transforms.deselect = deselect;
             };
-            if (window.innerWidth <= 720) {
+          }}
+          onTouchEnd={() => {
+            if (window.innerWidth <= 640) {
               setShowMobilePane(true);
             }
           }}
           ref={paneRootRef}
         >
-          <Actions editor={editor} />
+          <Actions editor={editor} showMobilePane={showMobilePane} />
           {/* <div>{levelNodes}</div>
         <div>{JSON.stringify(node)}</div>
         {JSON.stringify(nodePath)} */}
